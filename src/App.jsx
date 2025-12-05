@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, Upload, Calendar, PenTool, Move, Image as ImageIcon, FileText, Loader } from 'lucide-react';
+import { Download, Upload, Calendar, PenTool, Image as ImageIcon, FileText, Loader, AlertCircle } from 'lucide-react';
 
-// --- CONFIGURAÇÃO DE IMAGENS PADRÃO ---
-// Para tornar as imagens 100% automáticas no site final,
-// substitua as strings vazias abaixo pela URL da imagem hospedada ou Base64.
-const DEFAULT_BACKGROUND_URL = ""; 
+// --- CONFIGURAÇÃO DE IMAGENS PADRÃO E AUTOMÁTICAS ---
+// Mapeamento dos fundos fixos. As imagens devem estar em public/img_fundos/
+const FUNDO_MAP = {
+  '1 MÊS': '/img_fundos/fundo_1mes.jpg',
+  '3 MESES': '/img_fundos/fundo_3meses.jpg',
+  '6 MESES': '/img_fundos/fundo_6meses.jpg',
+  '1 ANO': '/img_fundos/fundo_1ano.jpg',
+  // 'OUTRO' não tem fundo automático, permite upload manual
+};
+
 const DEFAULT_LOGO_BOXK_URL = "";  
 const DEFAULT_LOGO_KORPUS_URL = ""; 
 
@@ -33,19 +39,14 @@ export default function App() {
   // Estados de Imagens
   const [logoKorpus, setLogoKorpus] = useState(DEFAULT_LOGO_KORPUS_URL || null);
   const [logoBoxK, setLogoBoxK] = useState(DEFAULT_LOGO_BOXK_URL || null);
-  const [fundoCertificado, setFundoCertificado] = useState(DEFAULT_BACKGROUND_URL || null);
-
-  // Estados de Ajuste Fino (Posição do Texto do Selo)
-  const [seloTop, setSeloTop] = useState(250);
-  const [seloLeft, setSeloLeft] = useState(165);
-  const [seloRotate, setSeloRotate] = useState(-6);
+  // Inicia o fundo com o correspondente ao período inicial (1 MÊS)
+  const [fundoCertificado, setFundoCertificado] = useState(FUNDO_MAP['1 MÊS'] || null);
 
   // Estado de carregamento para download
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Referência para exportação
   const certificateRef = useRef(null);
-  const sealTextRef = useRef(null);
 
   // Carregar bibliotecas externas para PDF e JPG
   useEffect(() => {
@@ -71,6 +72,16 @@ export default function App() {
     }).catch(err => console.error('Erro ao carregar bibliotecas', err));
   }, []);
 
+  // --- EFEITO DE TROCA AUTOMÁTICA DE FUNDO ---
+  useEffect(() => {
+    const novoFundoAutomatico = FUNDO_MAP[periodo];
+    // Se existir um fundo mapeado para este período, atualiza.
+    // Se for 'OUTRO', não faz nada automaticamente, mantendo o que estiver (ou permitindo upload manual).
+    if (novoFundoAutomatico) {
+      setFundoCertificado(novoFundoAutomatico);
+    }
+  }, [periodo]);
+
   // Lógica da Data Final
   const dataFinal = formatDate(addMonths(dataRetirada, 1).toISOString().split('T')[0]);
   const dataRetiradaFormatada = formatDate(dataRetirada);
@@ -95,7 +106,7 @@ export default function App() {
       '3 MESES': 'três meses',
       '6 MESES': 'seis meses',
       '1 ANO': 'um ano',
-      'OUTRO': p
+      'OUTRO': 'período'
     };
     return map[p] || p.toLowerCase();
   };
@@ -103,18 +114,12 @@ export default function App() {
   // Lógica de Formatação do Nome do Evento (Title Case ou All Caps)
   const formatarNomeEvento = (texto) => {
     if (!texto) return '';
-
-    // Se o texto for todo maiúsculo e tiver conteúdo, assume-se que é SIGLA ou intencional
-    // Ex: "ATC CG" -> mantém "ATC CG"
     if (texto === texto.toUpperCase() && texto.trim().length > 0) {
       return texto;
     }
-
-    // Caso contrário, aplica Title Case (primeira letra maiúscula)
     const excecoes = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'nas', 'nos', 'para', 'por', 'a', 'o', 'as', 'os', 'ao', 'aos', 'à', 'às'];
     
     return texto.toLowerCase().split(' ').map((palavra, index) => {
-      // Primeira palavra sempre maiúscula, outras verificam exceções
       if (index > 0 && excecoes.includes(palavra)) {
         return palavra;
       }
@@ -136,22 +141,13 @@ export default function App() {
   const prepareCanvas = async () => {
     if (!window.html2canvas) throw new Error("Biblioteca html2canvas não carregada.");
     
-    // Remove temporariamente a classe de gradiente para o html2canvas capturar o texto corretamente em alguns navegadores
-    if (sealTextRef.current) sealTextRef.current.classList.remove('seal-text-gradient');
-    
+    // Com o fundo fixo, não precisamos mais manipular o gradiente do texto do selo
     const canvas = await window.html2canvas(certificateRef.current, {
       scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
-      onclone: (clonedDoc) => {
-        const clonedSeal = clonedDoc.querySelector('[data-seal="1"]');
-        if (clonedSeal) clonedSeal.classList.remove('seal-text-gradient');
-      }
     });
-
-    // Restaura o gradiente
-    if (sealTextRef.current) sealTextRef.current.classList.add('seal-text-gradient');
 
     return canvas;
   };
@@ -217,15 +213,6 @@ export default function App() {
           body { background: white; }
           @page { size: landscape; margin: 0; }
         }
-
-        .seal-text-gradient {
-          background: linear-gradient(90deg, #f5d267 14%, #ffee95 30%, #a2621e 56%, #eeb948 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.3));
-          /* Cor de fallback para impressao/captura se o gradiente falhar */
-          color: #a2621e; 
-        }
       `}</style>
 
       {/* --- MENU LATERAL (Esquerda) --- */}
@@ -235,65 +222,6 @@ export default function App() {
         </h2>
 
         <div className="space-y-5">
-          {/* Seção de Fundo */}
-          <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-            <h3 className="text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">
-              <Upload size={14}/> Fundo & Logos
-            </h3>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Imagem de Fundo</label>
-                <input type="file" className="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" accept="image/*" onChange={(e) => handleImageUpload(e, setFundoCertificado)} />
-              </div>
-              
-              <div>
-                 <label className="block text-xs text-gray-600 mb-1">Logo Box K (Opcional)</label>
-                 <input type="file" className="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" accept="image/*" onChange={(e) => handleImageUpload(e, setLogoBoxK)} />
-              </div>
-
-               <div>
-                 <label className="block text-xs text-gray-600 mb-1">Logo Korpus (Opcional)</label>
-                 <input type="file" className="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" accept="image/*" onChange={(e) => handleImageUpload(e, setLogoKorpus)} />
-              </div>
-            </div>
-          </div>
-
-          {/* Ajuste Fino do Selo */}
-          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-             <h3 className="text-sm font-bold text-yellow-800 mb-2 flex items-center gap-2">
-              <Move size={14}/> Alinhamento do Selo
-            </h3>
-            <p className="text-[10px] text-yellow-700 mb-2">Arraste para encaixar o texto no selo.</p>
-            
-            <div className="space-y-2">
-              <div>
-                <label className="flex justify-between text-xs text-gray-600">Vertical (Y) <span>{seloTop}px</span></label>
-                <input 
-                  type="range" min="150" max="400" 
-                  value={seloTop} onChange={(e) => setSeloTop(Number(e.target.value))}
-                  className="w-full h-1 bg-yellow-200 rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-              <div>
-                <label className="flex justify-between text-xs text-gray-600">Horizontal (X) <span>{seloLeft}px</span></label>
-                <input 
-                  type="range" min="50" max="300" 
-                  value={seloLeft} onChange={(e) => setSeloLeft(Number(e.target.value))}
-                  className="w-full h-1 bg-yellow-200 rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-              <div>
-                <label className="flex justify-between text-xs text-gray-600">Rotação <span>{seloRotate}°</span></label>
-                <input 
-                  type="range" min="-45" max="45" 
-                  value={seloRotate} onChange={(e) => setSeloRotate(Number(e.target.value))}
-                  className="w-full h-1 bg-yellow-200 rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Dados do Certificado */}
           <div className="space-y-3">
             <div>
@@ -303,12 +231,17 @@ export default function App() {
                 onChange={(e) => setPeriodo(e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded text-sm"
               >
-                <option value="1 MÊS">1 MÊS</option>
-                <option value="3 MESES">3 MESES</option>
-                <option value="6 MESES">6 MESES</option>
-                <option value="1 ANO">1 ANO</option>
-                <option value="OUTRO">OUTRO</option>
+                <option value="1 MÊS">1 MÊS (Fundo Automático)</option>
+                <option value="3 MESES">3 MESES (Fundo Automático)</option>
+                <option value="6 MESES">6 MESES (Fundo Automático)</option>
+                <option value="1 ANO">1 ANO (Fundo Automático)</option>
+                <option value="OUTRO">OUTRO (Upload Manual)</option>
               </select>
+              {periodo !== 'OUTRO' && (
+                <p className="text-[10px] text-blue-600 mt-1 flex items-center gap-1">
+                  <AlertCircle size={10} /> O fundo muda automaticamente.
+                </p>
+              )}
             </div>
 
             <div>
@@ -355,13 +288,41 @@ export default function App() {
             </div>
           </div>
 
+          {/* Seção de Uploads (Logos e Fundo Manual) */}
+          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mt-6">
+            <h3 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+              <Upload size={14}/> Uploads & Logos
+            </h3>
+            
+            <div className="space-y-3">
+              {/* Upload de fundo manual só aparece se for OUTRO */}
+              {periodo === 'OUTRO' && (
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Imagem de Fundo (Manual)</label>
+                  <input type="file" className="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*" onChange={(e) => handleImageUpload(e, setFundoCertificado)} />
+                  <p className="text-[10px] text-orange-600 mt-1">Use um fundo que já contenha o selo.</p>
+                </div>
+              )}
+              
+              <div>
+                 <label className="block text-xs text-gray-600 mb-1">Logo Box K (Opcional)</label>
+                 <input type="file" className="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" accept="image/*" onChange={(e) => handleImageUpload(e, setLogoBoxK)} />
+              </div>
+
+               <div>
+                 <label className="block text-xs text-gray-600 mb-1">Logo Korpus (Opcional)</label>
+                 <input type="file" className="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" accept="image/*" onChange={(e) => handleImageUpload(e, setLogoKorpus)} />
+              </div>
+            </div>
+          </div>
+
           <div className="pt-4 space-y-2 border-t mt-4">
              <h3 className="text-sm font-bold text-gray-700">Exportar</h3>
              
              <div className="grid grid-cols-2 gap-2">
                 <button 
                   onClick={downloadPDF}
-                  disabled={isGenerating}
+                  disabled={isGenerating || !fundoCertificado}
                   className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded shadow flex items-center justify-center gap-1 transition text-sm disabled:opacity-50"
                 >
                   {isGenerating ? <Loader size={14} className="animate-spin"/> : <FileText size={16} />} 
@@ -370,7 +331,7 @@ export default function App() {
 
                 <button 
                   onClick={downloadJPG}
-                  disabled={isGenerating}
+                  disabled={isGenerating || !fundoCertificado}
                   className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded shadow flex items-center justify-center gap-1 transition text-sm disabled:opacity-50"
                 >
                   {isGenerating ? <Loader size={14} className="animate-spin"/> : <ImageIcon size={16} />} 
@@ -380,7 +341,8 @@ export default function App() {
              
              <button 
                onClick={() => window.print()}
-               className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-3 rounded shadow flex items-center justify-center gap-2 transition text-xs"
+               disabled={!fundoCertificado}
+               className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-3 rounded shadow flex items-center justify-center gap-2 transition text-xs disabled:opacity-50"
              >
                <Download size={14} /> Imprimir (Nativo)
              </button>
@@ -400,42 +362,29 @@ export default function App() {
           {fundoCertificado ? (
             <img 
               src={fundoCertificado} 
-              alt="Fundo" 
+              alt="Fundo do Certificado" 
               className="absolute inset-0 w-full h-full object-cover z-0"
+              // Adiciona um tratamento de erro caso a imagem não seja encontrada na pasta public
+              onError={(e) => {
+                e.target.onerror = null; 
+                e.target.src = "https://via.placeholder.com/1123x794?text=Imagem+de+Fundo+N%C3%A3o+Encontrada+(Verifique+a+pasta+public/img_fundos)";
+              }}
             />
           ) : (
             <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gray-100 text-gray-400 p-10 border-4 border-dashed border-gray-300 m-4 rounded-xl">
-              <Upload size={48} className="mb-4 opacity-50"/>
-              <p className="text-xl font-semibold">Carregue a imagem de fundo no menu lateral</p>
-              <p className="text-sm mt-2">No site final, esta imagem aparecerá automaticamente.</p>
+              <ImageIcon size={48} className="mb-4 opacity-50"/>
+              <p className="text-xl font-semibold">Aguardando Fundo...</p>
+              <p className="text-sm mt-2">Selecione um período ou faça upload manual se for "OUTRO".</p>
+              <p className="text-xs mt-4 text-red-400">Certifique-se de que as imagens estão na pasta <code>public/img_fundos</code>.</p>
             </div>
           )}
 
-          {/* SELO (AJUSTÁVEL) - Linha única */}
-          <div 
-            className="absolute z-10 w-56 h-56 flex items-center justify-center pointer-events-none"
-            style={{ 
-              top: `${seloTop}px`, 
-              left: `${seloLeft}px`,
-              transform: `rotate(${seloRotate}deg)`
-            }}
-          >
-            <div className="text-center drop-shadow-lg w-full px-2 flex items-center justify-center h-full">
-              <span 
-                ref={sealTextRef}
-                data-seal="1"
-                className="font-bebas italic leading-none tracking-wide block seal-text-gradient text-center" 
-                style={{ fontWeight: 600, fontSize: '3.8rem' }}
-              >
-                {periodo}
-              </span>
-            </div>
-          </div>
+          {/* O SELO DINÂMICO FOI REMOVIDO POIS JÁ ESTÁ NA IMAGEM DE FUNDO */}
 
           {/* TEXTOS */}
           <div className="absolute top-0 right-0 w-[65%] h-full flex flex-col pt-16 pr-20 pb-10 text-right z-20">
             
-            {/* Espaço do Título "Certificado" (Oculto se tiver fundo) */}
+            {/* Espaço do Título "Certificado" (Oculto se tiver fundo, pois já está na imagem) */}
             <div className="mb-14 flex flex-col items-end h-24 justify-center">
                {!fundoCertificado && <span className="font-garamond italic font-bold text-8xl tracking-tighter mr-4 text-black">Certificado</span>}
             </div>
