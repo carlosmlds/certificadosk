@@ -82,7 +82,6 @@ export default function App() {
         const containerWidth = previewContainerRef.current.offsetWidth;
         // 1123px é a largura base do certificado. 
         // Subtraímos padding (32px) para dar uma margem de segurança.
-        // Math.min(1, ...) garante que ele nunca fique maior que o tamanho original (zoom 100%)
         const newScale = Math.min(1, (containerWidth - 32) / 1123);
         setScale(newScale);
       }
@@ -147,13 +146,29 @@ export default function App() {
     }
   };
 
+  // --- NOVA FUNÇÃO DE PREPARAÇÃO DO CANVAS (ALTA QUALIDADE) ---
   const prepareCanvas = async () => {
     if (!window.html2canvas) throw new Error("Biblioteca html2canvas não carregada.");
+    
+    // Captura o elemento original
     const canvas = await window.html2canvas(certificateRef.current, {
-      scale: 2,
+      scale: 3, // Aumenta a escala para 3x (Alta Resolução)
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
+      // Força o tamanho original do certificado, ignorando o zoom da tela
+      width: 1123,
+      height: 794,
+      windowWidth: 1123,
+      windowHeight: 794,
+      // Truque: Clona o documento e remove o "zoom" (transform) antes de tirar a foto
+      onclone: (clonedDoc) => {
+        const element = clonedDoc.querySelector('.print-area');
+        if (element) {
+          element.style.transform = 'none'; // Remove o zoom responsivo
+          element.style.margin = '0'; // Garante que não tenha margens deslocando
+        }
+      }
     });
     return canvas;
   };
@@ -162,7 +177,7 @@ export default function App() {
     setIsGenerating(true);
     try {
       const canvas = await prepareCanvas();
-      const image = canvas.toDataURL("image/jpeg", 1.0);
+      const image = canvas.toDataURL("image/jpeg", 0.95); // 95% de qualidade JPG
       const link = document.createElement('a');
       link.download = `Certificado-${periodo.replace(' ', '-')}-${nomeEvento || 'Evento'}.jpg`;
       link.href = image;
@@ -179,7 +194,7 @@ export default function App() {
     setIsGenerating(true);
     try {
       const canvas = await prepareCanvas();
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
       if (!window.jspdf) throw new Error("Biblioteca jspdf não carregada.");
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF('l', 'mm', 'a4');
@@ -221,7 +236,6 @@ export default function App() {
       `}</style>
 
       {/* --- MENU LATERAL (Esquerda / Topo no Mobile) --- */}
-      {/* Ajustado: h-auto no mobile, h-screen sticky no desktop */}
       <div className="no-print w-full md:w-1/3 lg:w-1/4 bg-white p-6 shadow-lg z-10 border-b md:border-b-0 md:border-r border-gray-200 h-auto md:h-screen md:sticky md:top-0 flex flex-col order-2 md:order-1">
         
         {/* TÍTULO */}
@@ -326,7 +340,7 @@ export default function App() {
                   className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 md:py-2 px-3 rounded shadow flex items-center justify-center gap-1 transition text-sm disabled:opacity-50"
                 >
                   {isGenerating ? <Loader size={14} className="animate-spin"/> : <ImageIcon size={16} />} 
-                  Baixar JPG
+                  Baixar JPG (HD)
                 </button>
             </div>
             <button 
@@ -342,7 +356,7 @@ export default function App() {
         {/* RODAPÉ DO MENU */}
         <div className="pt-4 mt-4 border-t border-gray-200 text-center">
           <p className="text-[10px] text-gray-400 font-mono">
-            Versão 2.4 - Mobile Responsive
+            Versão 2.5 - HD Download
           </p>
         </div>
       </div>
