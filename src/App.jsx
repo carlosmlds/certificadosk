@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, Upload, Calendar, Image as ImageIcon, FileText, Loader, AlertCircle, X, Plus } from 'lucide-react';
+import { Download, Upload, Calendar, Image as ImageIcon, FileText, Loader, AlertCircle, X, Plus, MoveHorizontal, Maximize } from 'lucide-react';
 
 // --- CONFIGURAÇÃO DE IMAGENS PADRÃO E AUTOMÁTICAS ---
 // ?v=2 para forçar atualização de cache
@@ -43,14 +43,19 @@ export default function App() {
   const [plano, setPlano] = useState('ouro'); 
   const [dataRetirada, setDataRetirada] = useState(new Date().toISOString().split('T')[0]);
   const [fundoCertificado, setFundoCertificado] = useState(FUNDO_MAP['1 MÊS'].ouro || null);
-  const [extraLogo, setExtraLogo] = useState(null); // Estado para a logo extra
+  
+  // Estados para Logo Extra
+  const [extraLogo, setExtraLogo] = useState(null);
+  const [extraLogoSize, setExtraLogoSize] = useState(64); // Altura em px
+  const [extraLogoX, setExtraLogoX] = useState(300); // Posição Right em px (Aumentei o padrão para ficar mais à esquerda)
+
   const [isGenerating, setIsGenerating] = useState(false);
   
   // Estado para controlar o zoom/escala responsiva
   const [scale, setScale] = useState(1);
   
   const certificateRef = useRef(null);
-  const previewContainerRef = useRef(null); // Referência para o container pai do certificado
+  const previewContainerRef = useRef(null); 
 
   // Carrega bibliotecas externas
   useEffect(() => {
@@ -76,7 +81,7 @@ export default function App() {
     }).catch(err => console.error('Erro ao carregar bibliotecas', err));
   }, []);
 
-  // Efeito de Responsividade: Calcula a escala ideal
+  // Efeito de Responsividade
   useEffect(() => {
     const handleResize = () => {
       if (previewContainerRef.current) {
@@ -308,7 +313,7 @@ export default function App() {
           <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 mt-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
-                <Plus size={14}/> Logo Extra / Parceiro
+                <Plus size={14}/> Logo Extra
               </h3>
               {extraLogo && (
                 <button 
@@ -325,13 +330,47 @@ export default function App() {
               <label className="cursor-pointer flex flex-col items-center justify-center w-full h-20 border-2 border-indigo-200 border-dashed rounded-lg hover:bg-indigo-100 transition-colors">
                  <div className="flex flex-col items-center justify-center pt-2 pb-3">
                     <Upload size={20} className="text-indigo-400 mb-1" />
-                    <p className="text-[10px] text-indigo-500">Clique para enviar logo</p>
+                    <p className="text-[10px] text-indigo-500">Clique para enviar</p>
                  </div>
                  <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setExtraLogo)} />
               </label>
             ) : (
-              <div className="flex items-center justify-center bg-white p-2 rounded border border-gray-200">
-                <img src={extraLogo} alt="Logo Extra" className="h-12 object-contain" />
+              <div className="space-y-3">
+                <div className="flex items-center justify-center bg-white p-2 rounded border border-gray-200">
+                  <img src={extraLogo} alt="Logo Extra" className="h-10 object-contain" />
+                </div>
+                
+                {/* Sliders de Ajuste */}
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex justify-between text-[10px] text-indigo-700 mb-1">
+                      <span className="flex items-center gap-1"><Maximize size={10}/> Tamanho</span>
+                      <span>{extraLogoSize}px</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="20" 
+                      max="200" 
+                      value={extraLogoSize} 
+                      onChange={(e) => setExtraLogoSize(Number(e.target.value))}
+                      className="w-full h-1 bg-indigo-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[10px] text-indigo-700 mb-1">
+                      <span className="flex items-center gap-1"><MoveHorizontal size={10}/> Posição (Esq/Dir)</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="100" 
+                      max="600" 
+                      value={extraLogoX} 
+                      onChange={(e) => setExtraLogoX(Number(e.target.value))}
+                      className="w-full h-1 bg-indigo-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -381,7 +420,7 @@ export default function App() {
         {/* RODAPÉ DO MENU */}
         <div className="pt-4 mt-4 border-t border-gray-200 text-center">
           <p className="text-[10px] text-gray-400 font-mono">
-            Versão 2.6 - Logo Parceiro
+            Versão 2.7 - Ajuste Logo Extra
           </p>
         </div>
       </div>
@@ -454,13 +493,21 @@ export default function App() {
                 <span className="font-bold">{dataRetiradaFormatada}</span> até <span className="font-bold">{dataFinal}</span> na recepção da unidade de sua escolha.
               </div>
 
-              {/* RODAPÉ DO CERTIFICADO - LOGO EXTRA */}
+              {/* RODAPÉ DO CERTIFICADO - LOGO EXTRA COM POSIÇÃO DINÂMICA */}
               {extraLogo && (
-                <div className="absolute bottom-10 right-[250px] z-30 h-20 flex items-center justify-center">
+                <div 
+                  className="absolute bottom-10 z-30 h-20 flex items-center justify-center"
+                  style={{
+                    right: `${extraLogoX}px` // Posição controlada pelo slider
+                  }}
+                >
                   <img 
                     src={extraLogo} 
                     alt="Logo Parceiro" 
-                    className="h-16 w-auto object-contain drop-shadow-md" 
+                    className="object-contain drop-shadow-md" 
+                    style={{
+                      height: `${extraLogoSize}px` // Tamanho controlado pelo slider
+                    }}
                   />
                 </div>
               )}
