@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, Upload, Calendar, Image as ImageIcon, FileText, Loader, AlertCircle } from 'lucide-react';
+import { Download, Upload, Calendar, Image as ImageIcon, FileText, Loader, AlertCircle, X, Plus } from 'lucide-react';
 
 // --- CONFIGURAÇÃO DE IMAGENS PADRÃO E AUTOMÁTICAS ---
 // ?v=2 para forçar atualização de cache
@@ -43,6 +43,7 @@ export default function App() {
   const [plano, setPlano] = useState('ouro'); 
   const [dataRetirada, setDataRetirada] = useState(new Date().toISOString().split('T')[0]);
   const [fundoCertificado, setFundoCertificado] = useState(FUNDO_MAP['1 MÊS'].ouro || null);
+  const [extraLogo, setExtraLogo] = useState(null); // Estado para a logo extra
   const [isGenerating, setIsGenerating] = useState(false);
   
   // Estado para controlar o zoom/escala responsiva
@@ -80,14 +81,11 @@ export default function App() {
     const handleResize = () => {
       if (previewContainerRef.current) {
         const containerWidth = previewContainerRef.current.offsetWidth;
-        // 1123px é a largura base do certificado. 
-        // Subtraímos padding (32px) para dar uma margem de segurança.
         const newScale = Math.min(1, (containerWidth - 32) / 1123);
         setScale(newScale);
       }
     };
 
-    // Executa ao montar e ao redimensionar a tela
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -146,27 +144,22 @@ export default function App() {
     }
   };
 
-  // --- NOVA FUNÇÃO DE PREPARAÇÃO DO CANVAS (ALTA QUALIDADE) ---
   const prepareCanvas = async () => {
     if (!window.html2canvas) throw new Error("Biblioteca html2canvas não carregada.");
-    
-    // Captura o elemento original
     const canvas = await window.html2canvas(certificateRef.current, {
-      scale: 3, // Aumenta a escala para 3x (Alta Resolução)
+      scale: 3, 
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
-      // Força o tamanho original do certificado, ignorando o zoom da tela
       width: 1123,
       height: 794,
       windowWidth: 1123,
       windowHeight: 794,
-      // Truque: Clona o documento e remove o "zoom" (transform) antes de tirar a foto
       onclone: (clonedDoc) => {
         const element = clonedDoc.querySelector('.print-area');
         if (element) {
-          element.style.transform = 'none'; // Remove o zoom responsivo
-          element.style.margin = '0'; // Garante que não tenha margens deslocando
+          element.style.transform = 'none';
+          element.style.margin = '0';
         }
       }
     });
@@ -177,7 +170,7 @@ export default function App() {
     setIsGenerating(true);
     try {
       const canvas = await prepareCanvas();
-      const image = canvas.toDataURL("image/jpeg", 0.95); // 95% de qualidade JPG
+      const image = canvas.toDataURL("image/jpeg", 0.95);
       const link = document.createElement('a');
       link.download = `Certificado-${periodo.replace(' ', '-')}-${nomeEvento || 'Evento'}.jpg`;
       link.href = image;
@@ -311,6 +304,38 @@ export default function App() {
             </div>
           </div>
 
+          {/* ÁREA DE LOGO EXTRA */}
+          <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
+                <Plus size={14}/> Logo Extra / Parceiro
+              </h3>
+              {extraLogo && (
+                <button 
+                  onClick={() => setExtraLogo(null)}
+                  className="text-red-500 hover:text-red-700 bg-white rounded-full p-1"
+                  title="Remover Logo Extra"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+            
+            {!extraLogo ? (
+              <label className="cursor-pointer flex flex-col items-center justify-center w-full h-20 border-2 border-indigo-200 border-dashed rounded-lg hover:bg-indigo-100 transition-colors">
+                 <div className="flex flex-col items-center justify-center pt-2 pb-3">
+                    <Upload size={20} className="text-indigo-400 mb-1" />
+                    <p className="text-[10px] text-indigo-500">Clique para enviar logo</p>
+                 </div>
+                 <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setExtraLogo)} />
+              </label>
+            ) : (
+              <div className="flex items-center justify-center bg-white p-2 rounded border border-gray-200">
+                <img src={extraLogo} alt="Logo Extra" className="h-12 object-contain" />
+              </div>
+            )}
+          </div>
+
           <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mt-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
@@ -356,7 +381,7 @@ export default function App() {
         {/* RODAPÉ DO MENU */}
         <div className="pt-4 mt-4 border-t border-gray-200 text-center">
           <p className="text-[10px] text-gray-400 font-mono">
-            Versão 2.5 - HD Download
+            Versão 2.6 - Logo Parceiro
           </p>
         </div>
       </div>
@@ -366,7 +391,6 @@ export default function App() {
         ref={previewContainerRef}
         className="flex-1 bg-gray-300 flex items-start md:items-center justify-center p-4 md:p-8 overflow-hidden order-1 md:order-2 min-h-[50vh] md:min-h-screen"
       >
-        {/* Wrapper que ajusta a altura dinamicamente conforme o zoom */}
         <div 
           className="relative transition-all duration-300 ease-out shadow-2xl"
           style={{ 
@@ -429,6 +453,18 @@ export default function App() {
                 *Bolsa intransferível. O resgate pode ser feito do dia <br/>
                 <span className="font-bold">{dataRetiradaFormatada}</span> até <span className="font-bold">{dataFinal}</span> na recepção da unidade de sua escolha.
               </div>
+
+              {/* RODAPÉ DO CERTIFICADO - LOGO EXTRA */}
+              {extraLogo && (
+                <div className="absolute bottom-10 right-[250px] z-30 h-20 flex items-center justify-center">
+                  <img 
+                    src={extraLogo} 
+                    alt="Logo Parceiro" 
+                    className="h-16 w-auto object-contain drop-shadow-md" 
+                  />
+                </div>
+              )}
+
             </div>
           </div>
         </div>
