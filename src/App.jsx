@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, Upload, Calendar, Image as ImageIcon, FileText, Loader, AlertCircle, X, Plus, MoveHorizontal, Maximize } from 'lucide-react';
+import { Download, Upload, Calendar, Image as ImageIcon, FileText, Loader, AlertCircle, X, Plus, MoveHorizontal, Maximize, Pencil, RotateCcw } from 'lucide-react';
 
 // --- CONFIGURAÇÃO DE IMAGENS PADRÃO E AUTOMÁTICAS ---
-// ?v=2 para forçar atualização de cache
 const FUNDO_MAP = {
   '1 MÊS': {
     ouro: '/img_fundos/fundo_1mes.jpg?v=2',
@@ -22,14 +21,17 @@ const FUNDO_MAP = {
   },
 };
 
-// Utilitário para adicionar meses a uma data
+const TEXTO_PADRAO = {
+  titulo: 'PARABÉNS!',
+  subtitulo: 'Você agora faz parte da família Korpus!',
+};
+
 const addMonths = (date, months) => {
   const d = new Date(date);
   d.setMonth(d.getMonth() + months);
   return d;
 };
 
-// Formata data para PT-BR
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
   const [year, month, day] = dateStr.split('-');
@@ -40,31 +42,33 @@ export default function App() {
   const [periodo, setPeriodo] = useState('1 MÊS');
   const [nomeEvento, setNomeEvento] = useState('');
   const [artigoEvento, setArtigoEvento] = useState('ao');
-  const [plano, setPlano] = useState('ouro'); 
+  const [plano, setPlano] = useState('ouro');
   const [dataRetirada, setDataRetirada] = useState(new Date().toISOString().split('T')[0]);
   const [fundoCertificado, setFundoCertificado] = useState(FUNDO_MAP['1 MÊS'].ouro || null);
-  
-  // Estados para Logo Extra
+
+  const [nomeAluno, setNomeAluno] = useState('');
+  const [textoCertificado, setTextoCertificado] = useState({ ...TEXTO_PADRAO });
+  const [modalAberto, setModalAberto] = useState(false);
+  const [textoTemp, setTextoTemp] = useState({ ...TEXTO_PADRAO });
+
   const [extraLogo, setExtraLogo] = useState(null);
-  const [extraLogoSize, setExtraLogoSize] = useState(64); // Altura em px
-  const [extraLogoX, setExtraLogoX] = useState(300); // Posição Right em px (Aumentei o padrão para ficar mais à esquerda)
+  const [extraLogoSize, setExtraLogoSize] = useState(64);
+  const [extraLogoX, setExtraLogoX] = useState(300);
 
   const [isGenerating, setIsGenerating] = useState(false);
-  
-  // Estado para controlar o zoom/escala responsiva
   const [scale, setScale] = useState(1);
-  
-  const certificateRef = useRef(null);
-  const previewContainerRef = useRef(null); 
 
-  // Carrega bibliotecas externas
+  const certificateRef = useRef(null);
+  const previewContainerRef = useRef(null);
+
+  const textoEditado =
+    textoCertificado.titulo !== TEXTO_PADRAO.titulo ||
+    textoCertificado.subtitulo !== TEXTO_PADRAO.subtitulo;
+
   useEffect(() => {
     const loadScript = (src) => {
       return new Promise((resolve, reject) => {
-        if (document.querySelector(`script[src="${src}"]`)) {
-          resolve();
-          return;
-        }
+        if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
         const script = document.createElement('script');
         script.src = src;
         script.onload = resolve;
@@ -72,16 +76,12 @@ export default function App() {
         document.body.appendChild(script);
       });
     };
-
     Promise.all([
       loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
       loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
-    ]).then(() => {
-      console.log('Bibliotecas de exportação carregadas');
-    }).catch(err => console.error('Erro ao carregar bibliotecas', err));
+    ]).catch(err => console.error('Erro ao carregar bibliotecas', err));
   }, []);
 
-  // Efeito de Responsividade
   useEffect(() => {
     const handleResize = () => {
       if (previewContainerRef.current) {
@@ -90,24 +90,19 @@ export default function App() {
         setScale(newScale);
       }
     };
-
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Troca automática de fundos
   useEffect(() => {
     const opcoesPeriodo = FUNDO_MAP[periodo];
     if (opcoesPeriodo) {
       const novoFundo = opcoesPeriodo[plano];
-      if (novoFundo) {
-        setFundoCertificado(novoFundo);
-      }
+      if (novoFundo) setFundoCertificado(novoFundo);
     }
   }, [periodo, plano]);
 
-  // Gramática automática
   useEffect(() => {
     if (!nomeEvento) return;
     const primeiroNome = nomeEvento.split(' ')[0].toLowerCase();
@@ -120,13 +115,7 @@ export default function App() {
   }, [nomeEvento]);
 
   const getPeriodoExtenso = (p) => {
-    const map = {
-      '1 MÊS': 'um mês',
-      '3 MESES': 'três meses',
-      '6 MESES': 'seis meses',
-      '1 ANO': 'um ano',
-      'OUTRO': 'período'
-    };
+    const map = { '1 MÊS': 'um mês', '3 MESES': 'três meses', '6 MESES': 'seis meses', '1 ANO': 'um ano', 'OUTRO': 'período' };
     return map[p] || p.toLowerCase();
   };
 
@@ -149,10 +138,24 @@ export default function App() {
     }
   };
 
+  const abrirModal = () => {
+    setTextoTemp({ ...textoCertificado });
+    setModalAberto(true);
+  };
+
+  const salvarTexto = () => {
+    setTextoCertificado({ ...textoTemp });
+    setModalAberto(false);
+  };
+
+  const restaurarPadrao = () => {
+    setTextoTemp({ ...TEXTO_PADRAO });
+  };
+
   const prepareCanvas = async () => {
     if (!window.html2canvas) throw new Error("Biblioteca html2canvas não carregada.");
     const canvas = await window.html2canvas(certificateRef.current, {
-      scale: 3, 
+      scale: 3,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
@@ -219,8 +222,8 @@ export default function App() {
         .font-garamond { font-family: 'EB Garamond', serif; }
         @media print {
           .no-print { display: none !important; }
-          .print-area { 
-            transform: scale(1) !important; 
+          .print-area {
+            transform: scale(1) !important;
             width: 100% !important;
             height: 100vh !important;
             margin: 0 !important;
@@ -233,10 +236,64 @@ export default function App() {
         }
       `}</style>
 
-      {/* --- MENU LATERAL (Esquerda / Topo no Mobile) --- */}
-      <div className="no-print w-full md:w-1/3 lg:w-1/4 bg-white p-6 shadow-lg z-10 border-b md:border-b-0 md:border-r border-gray-200 h-auto md:h-screen md:sticky md:top-0 flex flex-col order-2 md:order-1">
-        
-        {/* TÍTULO */}
+      {/* MODAL DE EDIÇÃO DE TEXTO */}
+      {modalAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Pencil size={18} /> Editar Texto do Certificado
+              </h2>
+              <button onClick={() => setModalAberto(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Título (ex: PARABÉNS!)</label>
+                <input
+                  type="text"
+                  value={textoTemp.titulo}
+                  onChange={(e) => setTextoTemp(t => ({ ...t, titulo: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                  placeholder="PARABÉNS!"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Subtítulo</label>
+                <input
+                  type="text"
+                  value={textoTemp.subtitulo}
+                  onChange={(e) => setTextoTemp(t => ({ ...t, subtitulo: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                  placeholder="Você agora faz parte da família Korpus!"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+              <button
+                onClick={restaurarPadrao}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded px-3 py-2 transition"
+              >
+                <RotateCcw size={12} /> Texto Original
+              </button>
+              <div className="flex-1" />
+              <button onClick={() => setModalAberto(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+                Cancelar
+              </button>
+              <button onClick={salvarTexto} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded transition">
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MENU LATERAL */}
+      <div className="no-print w-full md:w-1/3 lg:w-1/4 bg-white p-6 shadow-lg z-10 border-b md:border-b-0 md:border-r border-gray-200 h-auto md:h-screen md:sticky md:top-0 flex flex-col order-2 md:order-1 overflow-y-auto">
+
         <div className="mb-6 pt-2 text-center md:text-left">
           <h1 className="text-2xl font-bold text-blue-900 font-bebas tracking-wide">
             Gerador de Certificados K
@@ -245,13 +302,10 @@ export default function App() {
 
         <div className="space-y-5">
           <div className="space-y-3">
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Período</label>
-              <select 
-                value={periodo} 
-                onChange={(e) => setPeriodo(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded text-sm"
-              >
+              <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm">
                 <option value="1 MÊS">1 MÊS</option>
                 <option value="3 MESES">3 MESES</option>
                 <option value="6 MESES">6 MESES</option>
@@ -267,16 +321,16 @@ export default function App() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Nome do Evento</label>
-              <input 
-                type="text" 
-                value={nomeEvento}
-                onChange={(e) => setNomeEvento(e.target.value)}
-                placeholder="Ex: Desafio Novembro Azul"
-                className="w-full p-2 border border-gray-300 rounded text-sm"
-              />
-              <p className="text-[10px] text-gray-400 mt-1">
-                *Maiúsculas automáticas (exceto siglas).
-              </p>
+              <input type="text" value={nomeEvento} onChange={(e) => setNomeEvento(e.target.value)} placeholder="Ex: Desafio Novembro Azul" className="w-full p-2 border border-gray-300 rounded text-sm" />
+              <p className="text-[10px] text-gray-400 mt-1">*Maiúsculas automáticas (exceto siglas).</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Nome do Aluno <span className="text-gray-400 font-normal">(opcional)</span>
+              </label>
+              <input type="text" value={nomeAluno} onChange={(e) => setNomeAluno(e.target.value)} placeholder="Ex: João Silva" className="w-full p-2 border border-gray-300 rounded text-sm" />
+              <p className="text-[10px] text-gray-400 mt-1">*Aparece no certificado se preenchido.</p>
             </div>
 
             <div className="flex gap-2">
@@ -290,8 +344,8 @@ export default function App() {
               <div className="flex-1">
                 <label className="block text-xs text-gray-500 mb-1">Plano (Troca Fundo)</label>
                 <div className="flex border rounded overflow-hidden">
-                    <button onClick={() => setPlano('ouro')} className={`flex-1 py-2 text-xs font-medium ${plano === 'ouro' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>Ouro</button>
-                    <button onClick={() => setPlano('box_k')} className={`flex-1 py-2 text-xs font-medium ${plano === 'box_k' ? 'bg-black text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>Box K</button>
+                  <button onClick={() => setPlano('ouro')} className={`flex-1 py-2 text-xs font-medium ${plano === 'ouro' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>Ouro</button>
+                  <button onClick={() => setPlano('box_k')} className={`flex-1 py-2 text-xs font-medium ${plano === 'box_k' ? 'bg-black text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>Box K</button>
                 </div>
               </div>
             </div>
@@ -300,165 +354,133 @@ export default function App() {
               <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
                 <Calendar size={14} /> Data de Retirada
               </label>
-              <input 
-                type="date" 
-                value={dataRetirada}
-                onChange={(e) => setDataRetirada(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded text-sm"
-              />
+              <input type="date" value={dataRetirada} onChange={(e) => setDataRetirada(e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm" />
             </div>
           </div>
 
-          {/* ÁREA DE LOGO EXTRA */}
-          <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 mt-4">
+          {/* EDITAR TEXTO */}
+          <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-amber-900 flex items-center gap-2">
+                  <Pencil size={13} /> Texto do Certificado
+                </h3>
+                {textoEditado && (
+                  <p className="text-[10px] text-amber-600 mt-0.5 flex items-center gap-1">
+                    <AlertCircle size={9} /> Texto personalizado ativo
+                  </p>
+                )}
+              </div>
+              <button onClick={abrirModal} className="text-xs bg-amber-500 hover:bg-amber-600 text-white font-semibold px-3 py-1.5 rounded transition flex items-center gap-1">
+                <Pencil size={11} /> Editar
+              </button>
+            </div>
+          </div>
+
+          {/* LOGO EXTRA */}
+          <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
-                <Plus size={14}/> Logo Extra
+                <Plus size={14} /> Logo Extra
               </h3>
               {extraLogo && (
-                <button 
-                  onClick={() => setExtraLogo(null)}
-                  className="text-red-500 hover:text-red-700 bg-white rounded-full p-1"
-                  title="Remover Logo Extra"
-                >
+                <button onClick={() => setExtraLogo(null)} className="text-red-500 hover:text-red-700 bg-white rounded-full p-1">
                   <X size={12} />
                 </button>
               )}
             </div>
-            
             {!extraLogo ? (
               <label className="cursor-pointer flex flex-col items-center justify-center w-full h-20 border-2 border-indigo-200 border-dashed rounded-lg hover:bg-indigo-100 transition-colors">
-                 <div className="flex flex-col items-center justify-center pt-2 pb-3">
-                    <Upload size={20} className="text-indigo-400 mb-1" />
-                    <p className="text-[10px] text-indigo-500">Clique para enviar</p>
-                 </div>
-                 <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setExtraLogo)} />
+                <div className="flex flex-col items-center justify-center pt-2 pb-3">
+                  <Upload size={20} className="text-indigo-400 mb-1" />
+                  <p className="text-[10px] text-indigo-500">Clique para enviar</p>
+                </div>
+                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setExtraLogo)} />
               </label>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-center bg-white p-2 rounded border border-gray-200">
                   <img src={extraLogo} alt="Logo Extra" className="h-10 object-contain" />
                 </div>
-                
-                {/* Sliders de Ajuste */}
                 <div className="space-y-2">
                   <div>
                     <div className="flex justify-between text-[10px] text-indigo-700 mb-1">
-                      <span className="flex items-center gap-1"><Maximize size={10}/> Tamanho</span>
+                      <span className="flex items-center gap-1"><Maximize size={10} /> Tamanho</span>
                       <span>{extraLogoSize}px</span>
                     </div>
-                    <input 
-                      type="range" 
-                      min="20" 
-                      max="200" 
-                      value={extraLogoSize} 
-                      onChange={(e) => setExtraLogoSize(Number(e.target.value))}
-                      className="w-full h-1 bg-indigo-200 rounded-lg appearance-none cursor-pointer"
-                    />
+                    <input type="range" min="20" max="200" value={extraLogoSize} onChange={(e) => setExtraLogoSize(Number(e.target.value))} className="w-full h-1 bg-indigo-200 rounded-lg appearance-none cursor-pointer" />
                   </div>
-
                   <div>
                     <div className="flex justify-between text-[10px] text-indigo-700 mb-1">
-                      <span className="flex items-center gap-1"><MoveHorizontal size={10}/> Posição (Esq/Dir)</span>
+                      <span className="flex items-center gap-1"><MoveHorizontal size={10} /> Posição (Esq/Dir)</span>
                     </div>
-                    <input 
-                      type="range" 
-                      min="100" 
-                      max="600" 
-                      value={extraLogoX} 
-                      onChange={(e) => setExtraLogoX(Number(e.target.value))}
-                      className="w-full h-1 bg-indigo-200 rounded-lg appearance-none cursor-pointer"
-                    />
+                    <input type="range" min="100" max="600" value={extraLogoX} onChange={(e) => setExtraLogoX(Number(e.target.value))} className="w-full h-1 bg-indigo-200 rounded-lg appearance-none cursor-pointer" />
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mt-6">
+          {/* FUNDO MANUAL */}
+          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                <Upload size={14}/> Fundo Manual
+                <Upload size={14} /> Fundo Manual
               </h3>
             </div>
-            <p className="text-[10px] text-gray-500 mb-2">
-              O fundo é automático. Use isto apenas se precisar substituir a imagem padrão.
-            </p>
+            <p className="text-[10px] text-gray-500 mb-2">O fundo é automático. Use isto apenas se precisar substituir a imagem padrão.</p>
             <input type="file" className="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*" onChange={(e) => handleImageUpload(e, setFundoCertificado)} />
           </div>
 
+          {/* EXPORTAR */}
           <div className="pt-4 space-y-2 border-t mt-4">
             <h3 className="text-sm font-bold text-gray-700">Exportar</h3>
             <div className="grid grid-cols-2 gap-2">
-                <button 
-                  onClick={downloadPDF}
-                  disabled={isGenerating || !fundoCertificado}
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 md:py-2 px-3 rounded shadow flex items-center justify-center gap-1 transition text-sm disabled:opacity-50"
-                >
-                  {isGenerating ? <Loader size={14} className="animate-spin"/> : <FileText size={16} />} 
-                  Baixar PDF
-                </button>
-                <button 
-                  onClick={downloadJPG}
-                  disabled={isGenerating || !fundoCertificado}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 md:py-2 px-3 rounded shadow flex items-center justify-center gap-1 transition text-sm disabled:opacity-50"
-                >
-                  {isGenerating ? <Loader size={14} className="animate-spin"/> : <ImageIcon size={16} />} 
-                  Baixar JPG (HD)
-                </button>
+              <button onClick={downloadPDF} disabled={isGenerating || !fundoCertificado} className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 md:py-2 px-3 rounded shadow flex items-center justify-center gap-1 transition text-sm disabled:opacity-50">
+                {isGenerating ? <Loader size={14} className="animate-spin" /> : <FileText size={16} />} Baixar PDF
+              </button>
+              <button onClick={downloadJPG} disabled={isGenerating || !fundoCertificado} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 md:py-2 px-3 rounded shadow flex items-center justify-center gap-1 transition text-sm disabled:opacity-50">
+                {isGenerating ? <Loader size={14} className="animate-spin" /> : <ImageIcon size={16} />} Baixar JPG (HD)
+              </button>
             </div>
-            <button 
-              onClick={() => window.print()}
-              disabled={!fundoCertificado}
-              className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 md:py-2 px-3 rounded shadow flex items-center justify-center gap-2 transition text-xs disabled:opacity-50 hidden md:flex"
-            >
+            <button onClick={() => window.print()} disabled={!fundoCertificado} className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 md:py-2 px-3 rounded shadow flex items-center justify-center gap-2 transition text-xs disabled:opacity-50 hidden md:flex">
               <Download size={14} /> Imprimir (Nativo)
             </button>
           </div>
         </div>
 
-        {/* RODAPÉ DO MENU */}
         <div className="pt-4 mt-4 border-t border-gray-200 text-center">
-          <p className="text-[10px] text-gray-400 font-mono">
-            Versão 2.7 - Ajuste Logo Extra
-          </p>
+          <p className="text-[10px] text-gray-400 font-mono">Versão 2.8 - Texto Editável + Nome do Aluno</p>
         </div>
       </div>
 
-      {/* --- ÁREA DE PRÉ-VISUALIZAÇÃO (Direita / Topo no Mobile) --- */}
-      <div 
+      {/* ÁREA DE PRÉ-VISUALIZAÇÃO */}
+      <div
         ref={previewContainerRef}
         className="flex-1 bg-gray-300 flex items-start md:items-center justify-center p-4 md:p-8 overflow-hidden order-1 md:order-2 min-h-[50vh] md:min-h-screen"
       >
-        <div 
+        <div
           className="relative transition-all duration-300 ease-out shadow-2xl"
-          style={{ 
-            width: `${1123 * scale}px`, 
-            height: `${794 * scale}px` 
-          }}
+          style={{ width: `${1123 * scale}px`, height: `${794 * scale}px` }}
         >
-          <div 
+          <div
             ref={certificateRef}
             className="print-area relative bg-white overflow-hidden text-black origin-top-left"
-            style={{ 
-              width: '1123px', 
-              height: '794px',
-              transform: `scale(${scale})`
-            }} 
+            style={{ width: '1123px', height: '794px', transform: `scale(${scale})` }}
           >
             {fundoCertificado ? (
-              <img 
-                src={fundoCertificado} 
-                alt="Fundo do Certificado" 
+              <img
+                src={fundoCertificado}
+                alt="Fundo do Certificado"
                 className="absolute inset-0 w-full h-full object-cover z-0"
                 onError={(e) => {
-                  e.target.onerror = null; 
-                  e.target.src = "https://via.placeholder.com/1123x794?text=Imagem+N%C3%A3o+Encontrada+no+Servidor+(Verifique+public/img_fundos)";
+                  e.target.onerror = null;
+                  e.target.src = "https://via.placeholder.com/1123x794?text=Imagem+N%C3%A3o+Encontrada+no+Servidor";
                 }}
               />
             ) : (
               <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gray-100 text-gray-400 p-10 border-4 border-dashed border-gray-300 m-4 rounded-xl">
-                <ImageIcon size={48} className="mb-4 opacity-50"/>
+                <ImageIcon size={48} className="mb-4 opacity-50" />
                 <p className="text-xl font-semibold">Aguardando Fundo...</p>
                 <p className="text-sm mt-2">Selecione um período ou faça upload manual se for "OUTRO".</p>
                 <p className="text-xs mt-4 text-red-400">Certifique-se de que as imagens estão na pasta <code>public/img_fundos</code>.</p>
@@ -472,46 +494,42 @@ export default function App() {
 
               <div className="mt-8 space-y-2">
                 <h2 className="font-garamond text-[33.7pt] uppercase tracking-normal text-gray-900 mb-2">
-                  PARABÉNS!
+                  {textoCertificado.titulo}
                 </h2>
-                <p className="font-garamond text-2xl text-black mb-10">
-                  Você agora faz parte da família Korpus!
+
+                <p className="font-garamond text-2xl text-black mb-4">
+                  {textoCertificado.subtitulo}
                 </p>
+
+                {nomeAluno && (
+                  <p className="font-garamond font-bold text-[22pt] text-gray-900 mb-4 italic">
+                    {nomeAluno}
+                  </p>
+                )}
 
                 <div className="font-garamond text-[20pt] leading-snug text-gray-800 w-[90%] ml-auto">
                   Este certificado contempla {getPeriodoExtenso(periodo)} de Academia Korpus no{' '}
                   <span className="font-bold">
                     {plano === 'ouro' ? 'Plano Ouro' : 'Plano Ouro Box K'}
                   </span>{' '}
-                  como premiação {artigoEvento} <br/>
+                  como premiação {artigoEvento} <br />
                   <span className="font-bold text-2xl">{formatarNomeEvento(nomeEvento) || '................................'}</span>
                 </div>
               </div>
 
               <div className="mt-8 font-garamond text-[11pt] text-gray-600 w-[80%] ml-auto leading-tight">
-                *Bolsa intransferível. O resgate pode ser feito do dia <br/>
+                *Bolsa intransferível. O resgate pode ser feito do dia <br />
                 <span className="font-bold">{dataRetiradaFormatada}</span> até <span className="font-bold">{dataFinal}</span> na recepção da unidade de sua escolha.
               </div>
 
-              {/* RODAPÉ DO CERTIFICADO - LOGO EXTRA COM POSIÇÃO DINÂMICA */}
               {extraLogo && (
-                <div 
+                <div
                   className="absolute bottom-10 z-30 h-20 flex items-center justify-center"
-                  style={{
-                    right: `${extraLogoX}px` // Posição controlada pelo slider
-                  }}
+                  style={{ right: `${extraLogoX}px` }}
                 >
-                  <img 
-                    src={extraLogo} 
-                    alt="Logo Parceiro" 
-                    className="object-contain drop-shadow-md" 
-                    style={{
-                      height: `${extraLogoSize}px` // Tamanho controlado pelo slider
-                    }}
-                  />
+                  <img src={extraLogo} alt="Logo Parceiro" className="object-contain drop-shadow-md" style={{ height: `${extraLogoSize}px` }} />
                 </div>
               )}
-
             </div>
           </div>
         </div>
