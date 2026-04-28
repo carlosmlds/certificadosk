@@ -254,13 +254,7 @@ export default function App() {
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Nome do Aluno <span className="text-gray-400 font-normal">(opcional)</span>
             </label>
-            <input 
-  type="text" 
-  value={nomeAluno} 
-  onChange={(e) => setNomeAluno(capitalizeFirstLetter(e.target.value))} 
-  placeholder="Ex: João Silva" 
-  className="w-full p-2 border border-gray-300 rounded text-sm" 
-/>
+            <input type="text" value={nomeAluno} onChange={(e) => setNomeAluno(capitalizeFirstLetter(e.target.value))} placeholder="Ex: João Silva" className="w-full p-2 border border-gray-300 rounded text-sm" />
             <p className="text-[10px] text-gray-400 mt-1">*Aparece no certificado se preenchido.</p>
           </div>
 
