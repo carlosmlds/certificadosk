@@ -352,7 +352,66 @@ export default function App() {
               </div>
             )}
           </div>
+{/* CONTEÚDO — coluna direita, posicionada absolutamente para não depender do fundo */}
+<div
+  className="absolute z-20 flex flex-col text-right"
+  style={{
+    top: '20px',
+    right: '80px',
+    width: '620px',
+    bottom: '230px',   // AUMENTADO significativamente para fugir das assinaturas
+  }}
+>
+  {/* Espaço reservado para o elemento "Certificado" do fundo (caligrafia) */}
+  <div style={{ height: '185px', flexShrink: 0 }} />
 
+  {/* PARABÉNS */}
+  <h2 className="font-garamond uppercase tracking-normal text-gray-900" style={{ fontSize: '38pt', lineHeight: 1, marginBottom: '6px' }}>
+    PARABÉNS!
+  </h2>
+
+  {/* Subtítulo */}
+  <p className="font-garamond text-black" style={{ fontSize: '20pt', marginBottom: '8px' }}>
+    Você agora faz parte da família Korpus!
+  </p>
+
+  {/* Nome do aluno */}
+  {nomeAluno && (
+    <p className="font-garamond font-bold italic text-gray-900" style={{ fontSize: '18pt', marginBottom: '8px' }}>
+      {nomeAluno}
+    </p>
+  )}
+
+  {/* Texto principal - lineHeight reduzido para compactar */}
+  <div className="font-garamond text-gray-800" style={{ fontSize: '16pt', lineHeight: 1.2 }}>
+    Este certificado contempla {getPeriodoExtenso(periodo)} de Academia Korpus no{' '}
+    <span className="font-bold">{plano === 'ouro' ? 'Plano Ouro' : 'Plano Ouro Box K'}</span>{' '}
+    {getTextoOcasiao()}
+    {tipoOcasiao !== 'outro' && (
+      <><br /><span className="font-bold" style={{ fontSize: '18pt' }}>{formatarNomeEvento(nomeEvento) || '................................'}</span></>
+    )}
+    {tipoOcasiao === 'outro' && (
+      <>{' '}<br /><span className="font-bold" style={{ fontSize: '18pt' }}>{formatarNomeEvento(nomeEvento) || '................................'}</span></>
+    )}
+  </div>
+
+  {/* Espaço flexível */}
+  <div style={{ flex: 1 }} />
+
+  {/* Data — Ancorada no novo bottom de 230px */}
+  <div 
+    className="font-garamond text-gray-600" 
+    style={{ 
+      fontSize: '9.5pt', 
+      lineHeight: 1.2,
+      marginTop: '0px'
+    }}
+  >
+    *Bolsa intransferível. O resgate pode ser feito do dia{' '}
+    <span className="font-bold">{dataRetiradaFormatada}</span> até{' '}
+    <span className="font-bold">{dataFinal}</span> na recepção da unidade de sua escolha.
+  </div>
+</div>
           {/* FUNDO MANUAL */}
           <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
             <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-1"><Upload size={14} /> Fundo Manual</h3>
