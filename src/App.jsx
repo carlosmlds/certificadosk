@@ -413,7 +413,7 @@ export default function App() {
                 top: '20px',
                 right: '80px',
                 width: '620px',
-                bottom: '360px',   // Subimos ainda mais para garantir o respiro
+                bottom: '300px',   // Subimos ainda mais para garantir o respiro
               }}
             >
               {/* Espaço reservado para o elemento "Certificado" do fundo (caligrafia) */}
