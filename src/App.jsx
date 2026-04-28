@@ -429,10 +429,10 @@ export default function App() {
                 Você agora faz parte da família Korpus!
               </p>
 
-              {/* Nome do aluno — Capitalização automática */}
+              {/* Nome do aluno — Capitalização automática na exibição */}
               {nomeAluno && (
                 <p className="font-garamond font-bold italic text-gray-900" style={{ fontSize: '18pt', marginBottom: '8px' }}>
-                  {nomeAluno}
+                  {nomeAluno.toLowerCase().split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')}
                 </p>
               )}
 
