@@ -32,6 +32,14 @@ const formatDate = (dateStr) => {
   return `${day}/${month}/${year}`;
 };
 
+// Função para colocar a primeira letra de cada nome em maiúsculo
+const capitalizeFirstLetter = (texto) => {
+  if (!texto) return '';
+  return texto.toLowerCase().split(' ').map(palavra => {
+    return palavra.charAt(0).toUpperCase() + palavra.slice(1);
+  }).join(' ');
+};
+
 export default function App() {
   const [periodo, setPeriodo] = useState('1 MÊS');
   const [nomeEvento, setNomeEvento] = useState('');
@@ -254,7 +262,7 @@ export default function App() {
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Nome do Aluno <span className="text-gray-400 font-normal">(opcional)</span>
             </label>
-            <input type="text" value={nomeAluno} onChange={(e) => setNomeAluno(capitalizeFirstLetter(e.target.value))} placeholder="Ex: João Silva" className="w-full p-2 border border-gray-300 rounded text-sm" />
+            onChange={(e) => setNomeAluno(capitalizeFirstLetter(e.target.value))}
             <p className="text-[10px] text-gray-400 mt-1">*Aparece no certificado se preenchido.</p>
           </div>
 
