@@ -40,14 +40,10 @@ export default function App() {
   const [dataRetirada, setDataRetirada] = useState(new Date().toISOString().split('T')[0]);
   const [fundoCertificado, setFundoCertificado] = useState(FUNDO_MAP['1 MÊS'].ouro || null);
 
-  // Nome do aluno
   const [nomeAluno, setNomeAluno] = useState('');
-
-  // Tipo de ocasião
-  const [tipoOcasiao, setTipoOcasiao] = useState('premiacao'); // 'premiacao' | 'bonificacao' | 'outro'
+  const [tipoOcasiao, setTipoOcasiao] = useState('premiacao');
   const [textoOutro, setTextoOutro] = useState('');
 
-  // Logo Extra
   const [extraLogo, setExtraLogo] = useState(null);
   const [extraLogoSize, setExtraLogoSize] = useState(64);
   const [extraLogoX, setExtraLogoX] = useState(300);
@@ -131,11 +127,8 @@ export default function App() {
     }
   };
 
-  // Monta o trecho "como premiação ao / como bonificação à / [texto livre]"
   const getTextoOcasiao = () => {
-    if (tipoOcasiao === 'outro') {
-      return textoOutro || '................................';
-    }
+    if (tipoOcasiao === 'outro') return textoOutro || '................................';
     const palavra = tipoOcasiao === 'premiacao' ? 'premiação' : 'bonificação';
     return `como ${palavra} ${artigoEvento}`;
   };
@@ -224,7 +217,7 @@ export default function App() {
         }
       `}</style>
 
-      {/* --- MENU LATERAL --- */}
+      {/* MENU LATERAL */}
       <div className="no-print w-full md:w-1/3 lg:w-1/4 bg-white p-6 shadow-lg z-10 border-b md:border-b-0 md:border-r border-gray-200 h-auto md:h-screen md:sticky md:top-0 flex flex-col order-2 md:order-1 overflow-y-auto">
 
         <div className="mb-6 pt-2 text-center md:text-left">
@@ -235,7 +228,6 @@ export default function App() {
 
         <div className="space-y-4">
 
-          {/* Período */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Período</label>
             <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm">
@@ -252,75 +244,43 @@ export default function App() {
             )}
           </div>
 
-          {/* Nome do Evento */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Nome do Evento</label>
-            <input
-              type="text"
-              value={nomeEvento}
-              onChange={(e) => setNomeEvento(e.target.value)}
-              placeholder="Ex: Desafio Novembro Azul"
-              className="w-full p-2 border border-gray-300 rounded text-sm"
-            />
+            <input type="text" value={nomeEvento} onChange={(e) => setNomeEvento(e.target.value)} placeholder="Ex: Desafio Novembro Azul" className="w-full p-2 border border-gray-300 rounded text-sm" />
             <p className="text-[10px] text-gray-400 mt-1">*Maiúsculas automáticas (exceto siglas).</p>
           </div>
 
-          {/* Nome do Aluno */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Nome do Aluno <span className="text-gray-400 font-normal">(opcional)</span>
             </label>
-            <input
-              type="text"
-              value={nomeAluno}
-              onChange={(e) => setNomeAluno(e.target.value)}
-              placeholder="Ex: João Silva"
-              className="w-full p-2 border border-gray-300 rounded text-sm"
-            />
+            <input type="text" value={nomeAluno} onChange={(e) => setNomeAluno(e.target.value)} placeholder="Ex: João Silva" className="w-full p-2 border border-gray-300 rounded text-sm" />
             <p className="text-[10px] text-gray-400 mt-1">*Aparece no certificado se preenchido.</p>
           </div>
 
-          {/* Ocasião + Preposição */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Ocasião</label>
             <div className="flex gap-2">
-              <select
-                value={tipoOcasiao}
-                onChange={(e) => setTipoOcasiao(e.target.value)}
-                className="flex-1 p-2 border border-gray-300 rounded text-sm"
-              >
+              <select value={tipoOcasiao} onChange={(e) => setTipoOcasiao(e.target.value)} className="flex-1 p-2 border border-gray-300 rounded text-sm">
                 <option value="premiacao">Premiação</option>
                 <option value="bonificacao">Bonificação</option>
                 <option value="outro">Outro (texto livre)</option>
               </select>
               {tipoOcasiao !== 'outro' && (
-                <select
-                  value={artigoEvento}
-                  onChange={(e) => setArtigoEvento(e.target.value)}
-                  className="w-16 p-2 bg-gray-50 border border-gray-300 rounded text-sm"
-                >
+                <select value={artigoEvento} onChange={(e) => setArtigoEvento(e.target.value)} className="w-16 p-2 bg-gray-50 border border-gray-300 rounded text-sm">
                   <option value="ao">ao</option>
                   <option value="à">à</option>
                 </select>
               )}
             </div>
             {tipoOcasiao === 'outro' && (
-              <input
-                type="text"
-                value={textoOutro}
-                onChange={(e) => setTextoOutro(e.target.value)}
-                placeholder='Ex: como presente especial ao'
-                className="w-full mt-2 p-2 border border-gray-300 rounded text-sm"
-              />
+              <input type="text" value={textoOutro} onChange={(e) => setTextoOutro(e.target.value)} placeholder='Ex: como presente especial ao' className="w-full mt-2 p-2 border border-gray-300 rounded text-sm" />
             )}
             <p className="text-[10px] text-gray-400 mt-1">
-              {tipoOcasiao === 'outro'
-                ? '*Escreva a frase completa que substituirá "como premiação ao".'
-                : '*Preposição usada antes do nome do evento.'}
+              {tipoOcasiao === 'outro' ? '*Frase completa que substitui "como premiação ao".' : '*Preposição usada antes do nome do evento.'}
             </p>
           </div>
 
-          {/* Plano */}
           <div>
             <label className="block text-xs text-gray-500 mb-1">Plano (Troca Fundo)</label>
             <div className="flex border rounded overflow-hidden">
@@ -329,37 +289,25 @@ export default function App() {
             </div>
           </div>
 
-          {/* Data */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
               <Calendar size={14} /> Data de Retirada
             </label>
-            <input
-              type="date"
-              value={dataRetirada}
-              onChange={(e) => setDataRetirada(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded text-sm"
-            />
+            <input type="date" value={dataRetirada} onChange={(e) => setDataRetirada(e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm" />
           </div>
 
           {/* LOGO EXTRA */}
           <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
-                <Plus size={14} /> Logo Extra
-              </h3>
+              <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2"><Plus size={14} /> Logo Extra</h3>
               {extraLogo && (
-                <button onClick={() => setExtraLogo(null)} className="text-red-500 hover:text-red-700 bg-white rounded-full p-1">
-                  <X size={12} />
-                </button>
+                <button onClick={() => setExtraLogo(null)} className="text-red-500 hover:text-red-700 bg-white rounded-full p-1"><X size={12} /></button>
               )}
             </div>
             {!extraLogo ? (
               <label className="cursor-pointer flex flex-col items-center justify-center w-full h-20 border-2 border-indigo-200 border-dashed rounded-lg hover:bg-indigo-100 transition-colors">
-                <div className="flex flex-col items-center justify-center pt-2 pb-3">
-                  <Upload size={20} className="text-indigo-400 mb-1" />
-                  <p className="text-[10px] text-indigo-500">Clique para enviar</p>
-                </div>
+                <Upload size={20} className="text-indigo-400 mb-1" />
+                <p className="text-[10px] text-indigo-500">Clique para enviar</p>
                 <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setExtraLogo)} />
               </label>
             ) : (
@@ -388,9 +336,7 @@ export default function App() {
 
           {/* FUNDO MANUAL */}
           <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-            <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-1">
-              <Upload size={14} /> Fundo Manual
-            </h3>
+            <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-1"><Upload size={14} /> Fundo Manual</h3>
             <p className="text-[10px] text-gray-500 mb-2">O fundo é automático. Use isto apenas se precisar substituir a imagem padrão.</p>
             <input type="file" className="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*" onChange={(e) => handleImageUpload(e, setFundoCertificado)} />
           </div>
@@ -413,11 +359,11 @@ export default function App() {
         </div>
 
         <div className="pt-4 mt-4 border-t border-gray-200 text-center">
-          <p className="text-[10px] text-gray-400 font-mono">Versão 2.9 - Ocasião + Nome do Aluno</p>
+          <p className="text-[10px] text-gray-400 font-mono">Versão 3.0 - Layout Corrigido</p>
         </div>
       </div>
 
-      {/* --- ÁREA DE PRÉ-VISUALIZAÇÃO --- */}
+      {/* ÁREA DE PRÉ-VISUALIZAÇÃO */}
       <div
         ref={previewContainerRef}
         className="flex-1 bg-gray-300 flex items-start md:items-center justify-center p-4 md:p-8 overflow-hidden order-1 md:order-2 min-h-[50vh] md:min-h-screen"
@@ -437,56 +383,63 @@ export default function App() {
                 src={fundoCertificado}
                 alt="Fundo do Certificado"
                 className="absolute inset-0 w-full h-full object-cover z-0"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "https://via.placeholder.com/1123x794?text=Imagem+N%C3%A3o+Encontrada";
-                }}
+                onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/1123x794?text=Imagem+N%C3%A3o+Encontrada"; }}
               />
             ) : (
               <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gray-100 text-gray-400 p-10 border-4 border-dashed border-gray-300 m-4 rounded-xl">
                 <ImageIcon size={48} className="mb-4 opacity-50" />
                 <p className="text-xl font-semibold">Aguardando Fundo...</p>
-                <p className="text-sm mt-2">Selecione um período ou faça upload manual.</p>
               </div>
             )}
 
-            {/* CONTEÚDO DO CERTIFICADO */}
-            <div className="absolute top-0 right-0 w-[65%] h-full flex flex-col z-20" style={{ paddingTop: '60px', paddingRight: '80px', paddingBottom: '130px' }}>
-
-              {/* Espaço do topo (onde fica o "Certificado" na imagem de fundo) */}
-              <div style={{ height: '90px' }} />
+            {/* CONTEÚDO — coluna direita, posicionada absolutamente para não depender do fundo */}
+            <div
+              className="absolute z-20 flex flex-col text-right"
+              style={{
+                top: '20px',       // começa bem acima — o espaço do "Certificado" do fundo fica nos primeiros ~180px
+                right: '80px',
+                width: '620px',
+                bottom: '170px',   // para bem acima da linha de assinaturas (~170px do fundo)
+              }}
+            >
+              {/* Espaço reservado para o elemento "Certificado" do fundo (caligrafia) */}
+              <div style={{ height: '185px', flexShrink: 0 }} />
 
               {/* PARABÉNS */}
-              <h2 className="font-garamond text-[33.7pt] uppercase tracking-normal text-gray-900 text-right">
+              <h2 className="font-garamond uppercase tracking-normal text-gray-900" style={{ fontSize: '38pt', lineHeight: 1, marginBottom: '6px' }}>
                 PARABÉNS!
               </h2>
 
               {/* Subtítulo */}
-              <p className="font-garamond text-2xl text-black text-right mt-1">
+              <p className="font-garamond text-black" style={{ fontSize: '20pt', marginBottom: '8px' }}>
                 Você agora faz parte da família Korpus!
               </p>
 
-              {/* Nome do aluno — posição absoluta para não empurrar nada */}
+              {/* Nome do aluno — só aparece se preenchido, tamanho contido */}
               {nomeAluno && (
-                <p className="font-garamond font-bold text-[20pt] text-gray-900 text-right italic mt-2">
+                <p className="font-garamond font-bold italic text-gray-900" style={{ fontSize: '18pt', marginBottom: '8px' }}>
                   {nomeAluno}
                 </p>
               )}
 
-              {/* Texto principal do certificado */}
-              <div className="font-garamond text-[18pt] leading-snug text-gray-800 text-right w-[90%] self-end mt-3">
+              {/* Texto principal */}
+              <div className="font-garamond text-gray-800" style={{ fontSize: '16pt', lineHeight: 1.4 }}>
                 Este certificado contempla {getPeriodoExtenso(periodo)} de Academia Korpus no{' '}
-                <span className="font-bold">
-                  {plano === 'ouro' ? 'Plano Ouro' : 'Plano Ouro Box K'}
-                </span>{' '}
-                {getTextoOcasiao()}{tipoOcasiao !== 'outro' && <><br />
-                <span className="font-bold text-[20pt]">{formatarNomeEvento(nomeEvento) || '................................'}</span></>}
-                {tipoOcasiao === 'outro' && <>{' '}<br />
-                <span className="font-bold text-[20pt]">{formatarNomeEvento(nomeEvento) || '................................'}</span></>}
+                <span className="font-bold">{plano === 'ouro' ? 'Plano Ouro' : 'Plano Ouro Box K'}</span>{' '}
+                {getTextoOcasiao()}
+                {tipoOcasiao !== 'outro' && (
+                  <><br /><span className="font-bold" style={{ fontSize: '18pt' }}>{formatarNomeEvento(nomeEvento) || '................................'}</span></>
+                )}
+                {tipoOcasiao === 'outro' && (
+                  <>{' '}<br /><span className="font-bold" style={{ fontSize: '18pt' }}>{formatarNomeEvento(nomeEvento) || '................................'}</span></>
+                )}
               </div>
 
-              {/* Data — fixada no fundo com mt-auto */}
-              <div className="font-garamond text-[10pt] text-gray-600 text-right w-[80%] self-end mt-auto leading-tight">
+              {/* Espaço flexível — empurra a data para baixo mas respeita o bottom */}
+              <div style={{ flex: 1 }} />
+
+              {/* Data — ancorada antes da área de assinaturas */}
+              <div className="font-garamond text-gray-600" style={{ fontSize: '9.5pt', lineHeight: 1.4 }}>
                 *Bolsa intransferível. O resgate pode ser feito do dia{' '}
                 <span className="font-bold">{dataRetiradaFormatada}</span> até{' '}
                 <span className="font-bold">{dataFinal}</span> na recepção da unidade de sua escolha.
@@ -495,10 +448,7 @@ export default function App() {
 
             {/* LOGO EXTRA */}
             {extraLogo && (
-              <div
-                className="absolute bottom-10 z-30 flex items-center justify-center"
-                style={{ right: `${extraLogoX}px` }}
-              >
+              <div className="absolute z-30 flex items-center justify-center" style={{ bottom: '40px', right: `${extraLogoX}px` }}>
                 <img src={extraLogo} alt="Logo Parceiro" className="object-contain drop-shadow-md" style={{ height: `${extraLogoSize}px` }} />
               </div>
             )}
