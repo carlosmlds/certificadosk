@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, Upload, Calendar, Image as ImageIcon, FileText, Loader, AlertCircle, X, Plus, MoveHorizontal, Maximize, Pencil, RotateCcw } from 'lucide-react';
+import { Download, Upload, Calendar, Image as ImageIcon, FileText, Loader, AlertCircle, X, Plus, MoveHorizontal, Maximize } from 'lucide-react';
 
-// --- CONFIGURAÇÃO DE IMAGENS PADRÃO E AUTOMÁTICAS ---
 const FUNDO_MAP = {
   '1 MÊS': {
     ouro: '/img_fundos/fundo_1mes.jpg?v=2',
@@ -19,11 +18,6 @@ const FUNDO_MAP = {
     ouro: '/img_fundos/fundo_1ano.jpg?v=2',
     box_k: '/img_fundos/fundo_1ano_boxk.jpg?v=2'
   },
-};
-
-const TEXTO_PADRAO = {
-  titulo: 'PARABÉNS!',
-  subtitulo: 'Você agora faz parte da família Korpus!',
 };
 
 const addMonths = (date, months) => {
@@ -46,11 +40,14 @@ export default function App() {
   const [dataRetirada, setDataRetirada] = useState(new Date().toISOString().split('T')[0]);
   const [fundoCertificado, setFundoCertificado] = useState(FUNDO_MAP['1 MÊS'].ouro || null);
 
+  // Nome do aluno
   const [nomeAluno, setNomeAluno] = useState('');
-  const [textoCertificado, setTextoCertificado] = useState({ ...TEXTO_PADRAO });
-  const [modalAberto, setModalAberto] = useState(false);
-  const [textoTemp, setTextoTemp] = useState({ ...TEXTO_PADRAO });
 
+  // Tipo de ocasião
+  const [tipoOcasiao, setTipoOcasiao] = useState('premiacao'); // 'premiacao' | 'bonificacao' | 'outro'
+  const [textoOutro, setTextoOutro] = useState('');
+
+  // Logo Extra
   const [extraLogo, setExtraLogo] = useState(null);
   const [extraLogoSize, setExtraLogoSize] = useState(64);
   const [extraLogoX, setExtraLogoX] = useState(300);
@@ -60,10 +57,6 @@ export default function App() {
 
   const certificateRef = useRef(null);
   const previewContainerRef = useRef(null);
-
-  const textoEditado =
-    textoCertificado.titulo !== TEXTO_PADRAO.titulo ||
-    textoCertificado.subtitulo !== TEXTO_PADRAO.subtitulo;
 
   useEffect(() => {
     const loadScript = (src) => {
@@ -138,18 +131,13 @@ export default function App() {
     }
   };
 
-  const abrirModal = () => {
-    setTextoTemp({ ...textoCertificado });
-    setModalAberto(true);
-  };
-
-  const salvarTexto = () => {
-    setTextoCertificado({ ...textoTemp });
-    setModalAberto(false);
-  };
-
-  const restaurarPadrao = () => {
-    setTextoTemp({ ...TEXTO_PADRAO });
+  // Monta o trecho "como premiação ao / como bonificação à / [texto livre]"
+  const getTextoOcasiao = () => {
+    if (tipoOcasiao === 'outro') {
+      return textoOutro || '................................';
+    }
+    const palavra = tipoOcasiao === 'premiacao' ? 'premiação' : 'bonificação';
+    return `como ${palavra} ${artigoEvento}`;
   };
 
   const prepareCanvas = async () => {
@@ -236,62 +224,7 @@ export default function App() {
         }
       `}</style>
 
-      {/* MODAL DE EDIÇÃO DE TEXTO */}
-      {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 space-y-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <Pencil size={18} /> Editar Texto do Certificado
-              </h2>
-              <button onClick={() => setModalAberto(false)} className="text-gray-400 hover:text-gray-600">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Título (ex: PARABÉNS!)</label>
-                <input
-                  type="text"
-                  value={textoTemp.titulo}
-                  onChange={(e) => setTextoTemp(t => ({ ...t, titulo: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded text-sm"
-                  placeholder="PARABÉNS!"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Subtítulo</label>
-                <input
-                  type="text"
-                  value={textoTemp.subtitulo}
-                  onChange={(e) => setTextoTemp(t => ({ ...t, subtitulo: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded text-sm"
-                  placeholder="Você agora faz parte da família Korpus!"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-              <button
-                onClick={restaurarPadrao}
-                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded px-3 py-2 transition"
-              >
-                <RotateCcw size={12} /> Texto Original
-              </button>
-              <div className="flex-1" />
-              <button onClick={() => setModalAberto(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
-                Cancelar
-              </button>
-              <button onClick={salvarTexto} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded transition">
-                Salvar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MENU LATERAL */}
+      {/* --- MENU LATERAL --- */}
       <div className="no-print w-full md:w-1/3 lg:w-1/4 bg-white p-6 shadow-lg z-10 border-b md:border-b-0 md:border-r border-gray-200 h-auto md:h-screen md:sticky md:top-0 flex flex-col order-2 md:order-1 overflow-y-auto">
 
         <div className="mb-6 pt-2 text-center md:text-left">
@@ -300,81 +233,113 @@ export default function App() {
           </h1>
         </div>
 
-        <div className="space-y-5">
-          <div className="space-y-3">
+        <div className="space-y-4">
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Período</label>
-              <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm">
-                <option value="1 MÊS">1 MÊS</option>
-                <option value="3 MESES">3 MESES</option>
-                <option value="6 MESES">6 MESES</option>
-                <option value="1 ANO">1 ANO</option>
-                <option value="OUTRO">OUTRO (Upload Manual)</option>
-              </select>
-              {periodo !== 'OUTRO' && (
-                <p className="text-[10px] text-blue-600 mt-1 flex items-center gap-1">
-                  <AlertCircle size={10} /> O fundo muda com o Período e Plano.
-                </p>
-              )}
-            </div>
+          {/* Período */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Período</label>
+            <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm">
+              <option value="1 MÊS">1 MÊS</option>
+              <option value="3 MESES">3 MESES</option>
+              <option value="6 MESES">6 MESES</option>
+              <option value="1 ANO">1 ANO</option>
+              <option value="OUTRO">OUTRO (Upload Manual)</option>
+            </select>
+            {periodo !== 'OUTRO' && (
+              <p className="text-[10px] text-blue-600 mt-1 flex items-center gap-1">
+                <AlertCircle size={10} /> O fundo muda com o Período e Plano.
+              </p>
+            )}
+          </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Nome do Evento</label>
-              <input type="text" value={nomeEvento} onChange={(e) => setNomeEvento(e.target.value)} placeholder="Ex: Desafio Novembro Azul" className="w-full p-2 border border-gray-300 rounded text-sm" />
-              <p className="text-[10px] text-gray-400 mt-1">*Maiúsculas automáticas (exceto siglas).</p>
-            </div>
+          {/* Nome do Evento */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Nome do Evento</label>
+            <input
+              type="text"
+              value={nomeEvento}
+              onChange={(e) => setNomeEvento(e.target.value)}
+              placeholder="Ex: Desafio Novembro Azul"
+              className="w-full p-2 border border-gray-300 rounded text-sm"
+            />
+            <p className="text-[10px] text-gray-400 mt-1">*Maiúsculas automáticas (exceto siglas).</p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Nome do Aluno <span className="text-gray-400 font-normal">(opcional)</span>
-              </label>
-              <input type="text" value={nomeAluno} onChange={(e) => setNomeAluno(e.target.value)} placeholder="Ex: João Silva" className="w-full p-2 border border-gray-300 rounded text-sm" />
-              <p className="text-[10px] text-gray-400 mt-1">*Aparece no certificado se preenchido.</p>
-            </div>
+          {/* Nome do Aluno */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Nome do Aluno <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={nomeAluno}
+              onChange={(e) => setNomeAluno(e.target.value)}
+              placeholder="Ex: João Silva"
+              className="w-full p-2 border border-gray-300 rounded text-sm"
+            />
+            <p className="text-[10px] text-gray-400 mt-1">*Aparece no certificado se preenchido.</p>
+          </div>
 
+          {/* Ocasião + Preposição */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Ocasião</label>
             <div className="flex gap-2">
-              <div className="w-1/3">
-                <label className="block text-xs text-gray-500 mb-1">Preposição</label>
-                <select value={artigoEvento} onChange={(e) => setArtigoEvento(e.target.value)} className="w-full p-2 bg-gray-50 border border-gray-300 rounded text-sm">
+              <select
+                value={tipoOcasiao}
+                onChange={(e) => setTipoOcasiao(e.target.value)}
+                className="flex-1 p-2 border border-gray-300 rounded text-sm"
+              >
+                <option value="premiacao">Premiação</option>
+                <option value="bonificacao">Bonificação</option>
+                <option value="outro">Outro (texto livre)</option>
+              </select>
+              {tipoOcasiao !== 'outro' && (
+                <select
+                  value={artigoEvento}
+                  onChange={(e) => setArtigoEvento(e.target.value)}
+                  className="w-16 p-2 bg-gray-50 border border-gray-300 rounded text-sm"
+                >
                   <option value="ao">ao</option>
                   <option value="à">à</option>
                 </select>
-              </div>
-              <div className="flex-1">
-                <label className="block text-xs text-gray-500 mb-1">Plano (Troca Fundo)</label>
-                <div className="flex border rounded overflow-hidden">
-                  <button onClick={() => setPlano('ouro')} className={`flex-1 py-2 text-xs font-medium ${plano === 'ouro' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>Ouro</button>
-                  <button onClick={() => setPlano('box_k')} className={`flex-1 py-2 text-xs font-medium ${plano === 'box_k' ? 'bg-black text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>Box K</button>
-                </div>
-              </div>
+              )}
             </div>
+            {tipoOcasiao === 'outro' && (
+              <input
+                type="text"
+                value={textoOutro}
+                onChange={(e) => setTextoOutro(e.target.value)}
+                placeholder='Ex: como presente especial ao'
+                className="w-full mt-2 p-2 border border-gray-300 rounded text-sm"
+              />
+            )}
+            <p className="text-[10px] text-gray-400 mt-1">
+              {tipoOcasiao === 'outro'
+                ? '*Escreva a frase completa que substituirá "como premiação ao".'
+                : '*Preposição usada antes do nome do evento.'}
+            </p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
-                <Calendar size={14} /> Data de Retirada
-              </label>
-              <input type="date" value={dataRetirada} onChange={(e) => setDataRetirada(e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm" />
+          {/* Plano */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Plano (Troca Fundo)</label>
+            <div className="flex border rounded overflow-hidden">
+              <button onClick={() => setPlano('ouro')} className={`flex-1 py-2 text-xs font-medium ${plano === 'ouro' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>Ouro</button>
+              <button onClick={() => setPlano('box_k')} className={`flex-1 py-2 text-xs font-medium ${plano === 'box_k' ? 'bg-black text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>Box K</button>
             </div>
           </div>
 
-          {/* EDITAR TEXTO */}
-          <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-amber-900 flex items-center gap-2">
-                  <Pencil size={13} /> Texto do Certificado
-                </h3>
-                {textoEditado && (
-                  <p className="text-[10px] text-amber-600 mt-0.5 flex items-center gap-1">
-                    <AlertCircle size={9} /> Texto personalizado ativo
-                  </p>
-                )}
-              </div>
-              <button onClick={abrirModal} className="text-xs bg-amber-500 hover:bg-amber-600 text-white font-semibold px-3 py-1.5 rounded transition flex items-center gap-1">
-                <Pencil size={11} /> Editar
-              </button>
-            </div>
+          {/* Data */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
+              <Calendar size={14} /> Data de Retirada
+            </label>
+            <input
+              type="date"
+              value={dataRetirada}
+              onChange={(e) => setDataRetirada(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded text-sm"
+            />
           </div>
 
           {/* LOGO EXTRA */}
@@ -423,17 +388,15 @@ export default function App() {
 
           {/* FUNDO MANUAL */}
           <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                <Upload size={14} /> Fundo Manual
-              </h3>
-            </div>
+            <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-1">
+              <Upload size={14} /> Fundo Manual
+            </h3>
             <p className="text-[10px] text-gray-500 mb-2">O fundo é automático. Use isto apenas se precisar substituir a imagem padrão.</p>
             <input type="file" className="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*" onChange={(e) => handleImageUpload(e, setFundoCertificado)} />
           </div>
 
           {/* EXPORTAR */}
-          <div className="pt-4 space-y-2 border-t mt-4">
+          <div className="pt-4 space-y-2 border-t">
             <h3 className="text-sm font-bold text-gray-700">Exportar</h3>
             <div className="grid grid-cols-2 gap-2">
               <button onClick={downloadPDF} disabled={isGenerating || !fundoCertificado} className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 md:py-2 px-3 rounded shadow flex items-center justify-center gap-1 transition text-sm disabled:opacity-50">
@@ -443,18 +406,18 @@ export default function App() {
                 {isGenerating ? <Loader size={14} className="animate-spin" /> : <ImageIcon size={16} />} Baixar JPG (HD)
               </button>
             </div>
-            <button onClick={() => window.print()} disabled={!fundoCertificado} className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 md:py-2 px-3 rounded shadow flex items-center justify-center gap-2 transition text-xs disabled:opacity-50 hidden md:flex">
+            <button onClick={() => window.print()} disabled={!fundoCertificado} className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 md:py-2 px-3 rounded shadow items-center justify-center gap-2 transition text-xs disabled:opacity-50 hidden md:flex">
               <Download size={14} /> Imprimir (Nativo)
             </button>
           </div>
         </div>
 
         <div className="pt-4 mt-4 border-t border-gray-200 text-center">
-          <p className="text-[10px] text-gray-400 font-mono">Versão 2.8 - Texto Editável + Nome do Aluno</p>
+          <p className="text-[10px] text-gray-400 font-mono">Versão 2.9 - Ocasião + Nome do Aluno</p>
         </div>
       </div>
 
-      {/* ÁREA DE PRÉ-VISUALIZAÇÃO */}
+      {/* --- ÁREA DE PRÉ-VISUALIZAÇÃO --- */}
       <div
         ref={previewContainerRef}
         className="flex-1 bg-gray-300 flex items-start md:items-center justify-center p-4 md:p-8 overflow-hidden order-1 md:order-2 min-h-[50vh] md:min-h-screen"
@@ -468,6 +431,7 @@ export default function App() {
             className="print-area relative bg-white overflow-hidden text-black origin-top-left"
             style={{ width: '1123px', height: '794px', transform: `scale(${scale})` }}
           >
+            {/* FUNDO */}
             {fundoCertificado ? (
               <img
                 src={fundoCertificado}
@@ -475,62 +439,69 @@ export default function App() {
                 className="absolute inset-0 w-full h-full object-cover z-0"
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = "https://via.placeholder.com/1123x794?text=Imagem+N%C3%A3o+Encontrada+no+Servidor";
+                  e.target.src = "https://via.placeholder.com/1123x794?text=Imagem+N%C3%A3o+Encontrada";
                 }}
               />
             ) : (
               <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gray-100 text-gray-400 p-10 border-4 border-dashed border-gray-300 m-4 rounded-xl">
                 <ImageIcon size={48} className="mb-4 opacity-50" />
                 <p className="text-xl font-semibold">Aguardando Fundo...</p>
-                <p className="text-sm mt-2">Selecione um período ou faça upload manual se for "OUTRO".</p>
-                <p className="text-xs mt-4 text-red-400">Certifique-se de que as imagens estão na pasta <code>public/img_fundos</code>.</p>
+                <p className="text-sm mt-2">Selecione um período ou faça upload manual.</p>
               </div>
             )}
 
-            <div className="absolute top-0 right-0 w-[65%] h-full flex flex-col pt-16 pr-20 pb-10 text-right z-20">
-              <div className="mb-14 flex flex-col items-end h-24 justify-center">
-                {!fundoCertificado && <span className="font-garamond italic font-bold text-8xl tracking-tighter mr-4 text-black">Certificado</span>}
-              </div>
+            {/* CONTEÚDO DO CERTIFICADO */}
+            <div className="absolute top-0 right-0 w-[65%] h-full flex flex-col z-20" style={{ paddingTop: '60px', paddingRight: '80px', paddingBottom: '130px' }}>
 
-              <div className="mt-8 space-y-2">
-                <h2 className="font-garamond text-[33.7pt] uppercase tracking-normal text-gray-900 mb-2">
-                  {textoCertificado.titulo}
-                </h2>
+              {/* Espaço do topo (onde fica o "Certificado" na imagem de fundo) */}
+              <div style={{ height: '90px' }} />
 
-                <p className="font-garamond text-2xl text-black mb-4">
-                  {textoCertificado.subtitulo}
+              {/* PARABÉNS */}
+              <h2 className="font-garamond text-[33.7pt] uppercase tracking-normal text-gray-900 text-right">
+                PARABÉNS!
+              </h2>
+
+              {/* Subtítulo */}
+              <p className="font-garamond text-2xl text-black text-right mt-1">
+                Você agora faz parte da família Korpus!
+              </p>
+
+              {/* Nome do aluno — posição absoluta para não empurrar nada */}
+              {nomeAluno && (
+                <p className="font-garamond font-bold text-[20pt] text-gray-900 text-right italic mt-2">
+                  {nomeAluno}
                 </p>
-
-                {nomeAluno && (
-                  <p className="font-garamond font-bold text-[22pt] text-gray-900 mb-4 italic">
-                    {nomeAluno}
-                  </p>
-                )}
-
-                <div className="font-garamond text-[20pt] leading-snug text-gray-800 w-[90%] ml-auto">
-                  Este certificado contempla {getPeriodoExtenso(periodo)} de Academia Korpus no{' '}
-                  <span className="font-bold">
-                    {plano === 'ouro' ? 'Plano Ouro' : 'Plano Ouro Box K'}
-                  </span>{' '}
-                  como premiação {artigoEvento} <br />
-                  <span className="font-bold text-2xl">{formatarNomeEvento(nomeEvento) || '................................'}</span>
-                </div>
-              </div>
-
-              <div className="mt-8 font-garamond text-[11pt] text-gray-600 w-[80%] ml-auto leading-tight">
-                *Bolsa intransferível. O resgate pode ser feito do dia <br />
-                <span className="font-bold">{dataRetiradaFormatada}</span> até <span className="font-bold">{dataFinal}</span> na recepção da unidade de sua escolha.
-              </div>
-
-              {extraLogo && (
-                <div
-                  className="absolute bottom-10 z-30 h-20 flex items-center justify-center"
-                  style={{ right: `${extraLogoX}px` }}
-                >
-                  <img src={extraLogo} alt="Logo Parceiro" className="object-contain drop-shadow-md" style={{ height: `${extraLogoSize}px` }} />
-                </div>
               )}
+
+              {/* Texto principal do certificado */}
+              <div className="font-garamond text-[18pt] leading-snug text-gray-800 text-right w-[90%] self-end mt-3">
+                Este certificado contempla {getPeriodoExtenso(periodo)} de Academia Korpus no{' '}
+                <span className="font-bold">
+                  {plano === 'ouro' ? 'Plano Ouro' : 'Plano Ouro Box K'}
+                </span>{' '}
+                {getTextoOcasiao()}{tipoOcasiao !== 'outro' && <><br />
+                <span className="font-bold text-[20pt]">{formatarNomeEvento(nomeEvento) || '................................'}</span></>}
+                {tipoOcasiao === 'outro' && <>{' '}<br />
+                <span className="font-bold text-[20pt]">{formatarNomeEvento(nomeEvento) || '................................'}</span></>}
+              </div>
+
+              {/* Data — fixada no fundo com mt-auto */}
+              <div className="font-garamond text-[10pt] text-gray-600 text-right w-[80%] self-end mt-auto leading-tight">
+                *Bolsa intransferível. O resgate pode ser feito do dia{' '}
+                <span className="font-bold">{dataRetiradaFormatada}</span> até{' '}
+                <span className="font-bold">{dataFinal}</span> na recepção da unidade de sua escolha.
+              </div>
             </div>
+
+            {/* LOGO EXTRA */}
+            {extraLogo && (
+              <div
+                className="absolute bottom-10 z-30 flex items-center justify-center"
+                style={{ right: `${extraLogoX}px` }}
+              >
+                <img src={extraLogo} alt="Logo Parceiro" className="object-contain drop-shadow-md" style={{ height: `${extraLogoSize}px` }} />
+              </div>
+            )}
           </div>
         </div>
       </div>
