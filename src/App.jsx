@@ -20,8 +20,6 @@ const FUNDO_MAP = {
   },
 };
 
-// Funções utilitárias
-
 const addMonths = (date, months) => {
   const d = new Date(date);
   d.setMonth(d.getMonth() + months);
@@ -33,26 +31,6 @@ const formatDate = (dateStr) => {
   const [year, month, day] = dateStr.split('-');
   return `${day}/${month}/${year}`;
 };
-
-// Nova função para capitalizar nomes próprios
-const capitalizeFirstLetter = (texto) => {
-  if (!texto) return '';
-  return texto.toLowerCase().split(' ').map(palavra => {
-    return palavra.charAt(0).toUpperCase() + palavra.slice(1);
-  }).join(' ');
-};
-
-const formatarNomeEvento = (texto) => {
-  if (!texto) return '';
-  // Se estiver tudo em maiúsculo (sigla), mantém
-  if (texto === texto.toUpperCase() && texto.trim().length > 0) return texto;
-  const excecoes = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'nas', 'nos', 'para', 'por', 'a', 'o', 'as', 'os', 'ao', 'aos', 'à', 'às'];
-  return texto.toLowerCase().split(' ').map((palavra, index) => {
-    if (index > 0 && excecoes.includes(palavra)) return palavra;
-    return palavra.charAt(0).toUpperCase() + palavra.slice(1);
-  }).join(' ');
-};
-
 
 export default function App() {
   const [periodo, setPeriodo] = useState('1 MÊS');
@@ -128,6 +106,16 @@ export default function App() {
   const getPeriodoExtenso = (p) => {
     const map = { '1 MÊS': 'um mês', '3 MESES': 'três meses', '6 MESES': 'seis meses', '1 ANO': 'um ano', 'OUTRO': 'período' };
     return map[p] || p.toLowerCase();
+  };
+
+  const formatarNomeEvento = (texto) => {
+    if (!texto) return '';
+    if (texto === texto.toUpperCase() && texto.trim().length > 0) return texto;
+    const excecoes = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'nas', 'nos', 'para', 'por', 'a', 'o', 'as', 'os', 'ao', 'aos', 'à', 'às'];
+    return texto.toLowerCase().split(' ').map((palavra, index) => {
+      if (index > 0 && excecoes.includes(palavra)) return palavra;
+      return palavra.charAt(0).toUpperCase() + palavra.slice(1);
+    }).join(' ');
   };
 
   const handleImageUpload = (e, setter) => {
@@ -266,15 +254,8 @@ export default function App() {
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Nome do Aluno <span className="text-gray-400 font-normal">(opcional)</span>
             </label>
-            <input 
-              type="text" 
-              value={nomeAluno} 
-              // Aplica capitalize ao digitar
-              onChange={(e) => setNomeAluno(capitalizeFirstLetter(e.target.value))} 
-              placeholder="Ex: João Silva" 
-              className="w-full p-2 border border-gray-300 rounded text-sm" 
-            />
-            <p className="text-[10px] text-gray-400 mt-1">*Aparece no certificado se preenchido. Capitalização automática.</p>
+            <input type="text" value={nomeAluno} onChange={(e) => setNomeAluno(e.target.value)} placeholder="Ex: João Silva" className="w-full p-2 border border-gray-300 rounded text-sm" />
+            <p className="text-[10px] text-gray-400 mt-1">*Aparece no certificado se preenchido.</p>
           </div>
 
           <div>
@@ -352,66 +333,7 @@ export default function App() {
               </div>
             )}
           </div>
-{/* CONTEÚDO — coluna direita, posicionada absolutamente para não depender do fundo */}
-<div
-  className="absolute z-20 flex flex-col text-right"
-  style={{
-    top: '20px',
-    right: '80px',
-    width: '620px',
-    bottom: '230px',   // AUMENTADO significativamente para fugir das assinaturas
-  }}
->
-  {/* Espaço reservado para o elemento "Certificado" do fundo (caligrafia) */}
-  <div style={{ height: '185px', flexShrink: 0 }} />
 
-  {/* PARABÉNS */}
-  <h2 className="font-garamond uppercase tracking-normal text-gray-900" style={{ fontSize: '38pt', lineHeight: 1, marginBottom: '6px' }}>
-    PARABÉNS!
-  </h2>
-
-  {/* Subtítulo */}
-  <p className="font-garamond text-black" style={{ fontSize: '20pt', marginBottom: '8px' }}>
-    Você agora faz parte da família Korpus!
-  </p>
-
-  {/* Nome do aluno */}
-  {nomeAluno && (
-    <p className="font-garamond font-bold italic text-gray-900" style={{ fontSize: '18pt', marginBottom: '8px' }}>
-      {nomeAluno}
-    </p>
-  )}
-
-  {/* Texto principal - lineHeight reduzido para compactar */}
-  <div className="font-garamond text-gray-800" style={{ fontSize: '16pt', lineHeight: 1.2 }}>
-    Este certificado contempla {getPeriodoExtenso(periodo)} de Academia Korpus no{' '}
-    <span className="font-bold">{plano === 'ouro' ? 'Plano Ouro' : 'Plano Ouro Box K'}</span>{' '}
-    {getTextoOcasiao()}
-    {tipoOcasiao !== 'outro' && (
-      <><br /><span className="font-bold" style={{ fontSize: '18pt' }}>{formatarNomeEvento(nomeEvento) || '................................'}</span></>
-    )}
-    {tipoOcasiao === 'outro' && (
-      <>{' '}<br /><span className="font-bold" style={{ fontSize: '18pt' }}>{formatarNomeEvento(nomeEvento) || '................................'}</span></>
-    )}
-  </div>
-
-  {/* Espaço flexível */}
-  <div style={{ flex: 1 }} />
-
-  {/* Data — Ancorada no novo bottom de 230px */}
-  <div 
-    className="font-garamond text-gray-600" 
-    style={{ 
-      fontSize: '9.5pt', 
-      lineHeight: 1.2,
-      marginTop: '0px'
-    }}
-  >
-    *Bolsa intransferível. O resgate pode ser feito do dia{' '}
-    <span className="font-bold">{dataRetiradaFormatada}</span> até{' '}
-    <span className="font-bold">{dataFinal}</span> na recepção da unidade de sua escolha.
-  </div>
-</div>
           {/* FUNDO MANUAL */}
           <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
             <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-1"><Upload size={14} /> Fundo Manual</h3>
@@ -437,7 +359,7 @@ export default function App() {
         </div>
 
         <div className="pt-4 mt-4 border-t border-gray-200 text-center">
-          <p className="text-[10px] text-gray-400 font-mono">Versão 3.1 - Correção de Layout e Capitalização</p>
+          <p className="text-[10px] text-gray-400 font-mono">Versão 3.0 - Layout Corrigido</p>
         </div>
       </div>
 
@@ -477,7 +399,7 @@ export default function App() {
                 top: '20px',       // começa bem acima — o espaço do "Certificado" do fundo fica nos primeiros ~180px
                 right: '80px',
                 width: '620px',
-                bottom: '185px',   // AUMENTADO para subir o texto e afastar das assinaturas (era 170px)
+                bottom: '170px',   // para bem acima da linha de assinaturas (~170px do fundo)
               }}
             >
               {/* Espaço reservado para o elemento "Certificado" do fundo (caligrafia) */}
@@ -493,7 +415,7 @@ export default function App() {
                 Você agora faz parte da família Korpus!
               </p>
 
-              {/* Nome do aluno — capitalização garantida, tamanho contido */}
+              {/* Nome do aluno — só aparece se preenchido, tamanho contido */}
               {nomeAluno && (
                 <p className="font-garamond font-bold italic text-gray-900" style={{ fontSize: '18pt', marginBottom: '8px' }}>
                   {nomeAluno}
@@ -513,18 +435,11 @@ export default function App() {
                 )}
               </div>
 
-              {/* Espaço flexível — empurra a data para baixo mas respeita o bottom do contêiner */}
+              {/* Espaço flexível — empurra a data para baixo mas respeita o bottom */}
               <div style={{ flex: 1 }} />
 
-              {/* Data — ancorada antes da área de assinaturas. Ajustada para subir um pouco. */}
-              <div 
-                className="font-garamond text-gray-600" 
-                style={{ 
-                  fontSize: '9.5pt', 
-                  lineHeight: 1.4,
-                  marginTop: '0px' // Reduzido para aproximar ligeiramente do flex:1 e subir mais rápido
-                }}
-              >
+              {/* Data — ancorada antes da área de assinaturas */}
+              <div className="font-garamond text-gray-600" style={{ fontSize: '9.5pt', lineHeight: 1.4 }}>
                 *Bolsa intransferível. O resgate pode ser feito do dia{' '}
                 <span className="font-bold">{dataRetiradaFormatada}</span> até{' '}
                 <span className="font-bold">{dataFinal}</span> na recepção da unidade de sua escolha.
