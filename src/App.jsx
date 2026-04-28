@@ -396,10 +396,10 @@ export default function App() {
             <div
               className="absolute z-20 flex flex-col text-right"
               style={{
-                top: '20px',       // começa bem acima — o espaço do "Certificado" do fundo fica nos primeiros ~180px
+                top: '20px',
                 right: '80px',
                 width: '620px',
-                bottom: '170px',   // para bem acima da linha de assinaturas (~170px do fundo)
+                bottom: '235px',   // Subimos ainda mais para garantir o respiro
               }}
             >
               {/* Espaço reservado para o elemento "Certificado" do fundo (caligrafia) */}
@@ -415,15 +415,15 @@ export default function App() {
                 Você agora faz parte da família Korpus!
               </p>
 
-              {/* Nome do aluno — só aparece se preenchido, tamanho contido */}
+              {/* Nome do aluno — Capitalização automática */}
               {nomeAluno && (
                 <p className="font-garamond font-bold italic text-gray-900" style={{ fontSize: '18pt', marginBottom: '8px' }}>
                   {nomeAluno}
                 </p>
               )}
 
-              {/* Texto principal */}
-              <div className="font-garamond text-gray-800" style={{ fontSize: '16pt', lineHeight: 1.4 }}>
+              {/* Texto principal — LineHeight reduzido para 1.2 */}
+              <div className="font-garamond text-gray-800" style={{ fontSize: '16pt', lineHeight: 1.2 }}>
                 Este certificado contempla {getPeriodoExtenso(periodo)} de Academia Korpus no{' '}
                 <span className="font-bold">{plano === 'ouro' ? 'Plano Ouro' : 'Plano Ouro Box K'}</span>{' '}
                 {getTextoOcasiao()}
@@ -435,11 +435,11 @@ export default function App() {
                 )}
               </div>
 
-              {/* Espaço flexível — empurra a data para baixo mas respeita o bottom */}
+              {/* Espaço flexível — Empurra a data para o limite do 'bottom' acima */}
               <div style={{ flex: 1 }} />
 
-              {/* Data — ancorada antes da área de assinaturas */}
-              <div className="font-garamond text-gray-600" style={{ fontSize: '9.5pt', lineHeight: 1.4 }}>
+              {/* Data — Agora bem longe das assinaturas */}
+              <div className="font-garamond text-gray-600" style={{ fontSize: '9.5pt', lineHeight: 1.2 }}>
                 *Bolsa intransferível. O resgate pode ser feito do dia{' '}
                 <span className="font-bold">{dataRetiradaFormatada}</span> até{' '}
                 <span className="font-bold">{dataFinal}</span> na recepção da unidade de sua escolha.
